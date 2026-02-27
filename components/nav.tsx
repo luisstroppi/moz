@@ -12,7 +12,7 @@ export function NavPortal({
     <header className="mb-6 rounded-2xl border border-amber-100 bg-white/95 p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.15em] text-amber-700">MOZ</p>
+          <p className="text-xs uppercase tracking-[0.15em] text-amber-700">Moz by Giunti</p>
           <h1 className="text-xl font-semibold">{titulo}</h1>
         </div>
         <form action={logoutAction}>

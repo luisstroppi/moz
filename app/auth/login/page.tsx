@@ -7,7 +7,7 @@ export default function LoginPage({
   searchParams: { error?: string };
 }) {
   return (
-    <div className="mx-auto max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-semibold">Iniciar sesión</h1>
       {searchParams.error && <p className="rounded-lg bg-rose-50 p-2 text-sm text-rose-700">{searchParams.error}</p>}
 

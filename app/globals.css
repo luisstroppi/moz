@@ -9,7 +9,7 @@
 body {
   @apply bg-fondo text-slate-900 antialiased;
   font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
-  background-image: radial-gradient(circle at 10% 10%, #fdf6ee 0%, #f8f2e7 45%, #f4eadb 100%);
+  background-image: radial-gradient(circle at 10% 10%, #fdf9e8 0%, #f8f2e7 45%, #f2e9d7 100%);
 }
 
 input,
@@ -19,7 +19,7 @@ select {
 }
 
 button {
-  @apply rounded-xl bg-primario px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply rounded-xl bg-primario px-4 py-2 text-sm font-semibold text-[#FDF9E8] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 a {

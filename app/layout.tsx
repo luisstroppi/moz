@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MOZ",
+  title: "Moz by Giunti",
   description: "Marketplace de mozos y restaurantes"
 };
 

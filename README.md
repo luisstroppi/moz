@@ -1,4 +1,4 @@
-# MOZ MVP
+# Moz by Giunti MVP
 
 Marketplace tipo Uber para conectar **restaurantes** y **mozos** por turnos.
 
