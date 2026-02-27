@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-fondo text-slate-900 antialiased;
+}
+
+input,
+textarea,
+select {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none;
+}
+
+button {
+  @apply rounded-lg bg-primario px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+a {
+  @apply text-slate-900 underline-offset-2 hover:underline;
+}
