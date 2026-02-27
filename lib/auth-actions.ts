@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAppUrl } from "@/lib/app-url";
 import type { Role } from "@/lib/types";
 
 export async function signupAction(formData: FormData) {
@@ -14,7 +15,13 @@ export async function signupAction(formData: FormData) {
   }
 
   const supabase = createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${getAppUrl()}/auth/login`
+    }
+  });
 
   if (error || !data.user) {
     redirect("/auth/signup?error=" + encodeURIComponent(error?.message ?? "No se pudo crear la cuenta") + "&role=" + role);
