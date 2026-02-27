@@ -4,6 +4,14 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { rateRestaurant } from "@/app/waiter/actions";
 
+type ShiftLite = {
+  id: string;
+  title: string;
+  status: string;
+  restaurant_id: string;
+  restaurants: { name: string | null } | { name: string | null }[] | null;
+};
+
 export default async function MyShiftsPage() {
   const profile = await requireRole("waiter");
   const supabase = createClient();
@@ -35,15 +43,12 @@ export default async function MyShiftsPage() {
         <Subtitulo>Postulados / Contratados / Completados</Subtitulo>
         <ul className="mt-3 space-y-3">
           {apps?.map((app) => {
-            const shift = app.shifts as {
-              id: string;
-              title: string;
-              status: string;
-              restaurant_id: string;
-              restaurants: { name: string | null } | null;
-            } | null;
+            const shiftRaw = app.shifts as ShiftLite | ShiftLite[] | null;
+            const shift = Array.isArray(shiftRaw) ? shiftRaw[0] ?? null : shiftRaw;
 
             if (!shift) return null;
+            const restaurantRaw = shift.restaurants;
+            const restaurant = Array.isArray(restaurantRaw) ? restaurantRaw[0] ?? null : restaurantRaw;
 
             return (
               <li key={app.id} className="rounded-lg border border-slate-200 p-3">
@@ -51,7 +56,7 @@ export default async function MyShiftsPage() {
                   <p className="font-medium">{shift.title}</p>
                   <ChipEstado estado={shift.status} />
                 </div>
-                <p className="text-sm text-slate-600">Restaurante: {shift.restaurants?.name || "Sin nombre"}</p>
+                <p className="text-sm text-slate-600">Restaurante: {restaurant?.name || "Sin nombre"}</p>
                 <p className="text-sm text-slate-600">Postulación: {app.status}</p>
 
                 {shift.status === "completed" && app.status === "hired" && !ratedShiftIds.has(shift.id) && (
