@@ -8,12 +8,12 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="overflow-hidden rounded-[24px] border border-[#154C52]/30 bg-[#154C52] text-[#FDF9E8] shadow-xl">
-      <section className="relative px-6 pb-14 pt-8 sm:px-10 md:px-14 md:pt-10">
+    <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen">
+      <section className="relative overflow-hidden bg-[#154C52] px-6 pb-14 pt-8 text-[#FDF9E8] sm:px-10 md:px-14 md:pt-10">
         <div className="pointer-events-none absolute -left-32 -top-20 h-80 w-80 rounded-full bg-[#F0CD1B]/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-[#5E1F1F]/20 blur-3xl" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 mx-auto w-full max-w-6xl">
           <div className="mb-10 flex items-center justify-between">
             <p className="rounded-full border border-[#FDF9E8]/35 px-4 py-1 text-xs uppercase tracking-[0.22em] text-[#FDF9E8]/90">
               Moz by Giunti
@@ -77,7 +77,7 @@ export default async function HomePage() {
       </section>
 
       <section className="bg-[#FDF9E8] px-6 py-12 text-slate-900 sm:px-10 md:px-14">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-2">
           <article className="rounded-2xl border border-[#154C52]/20 bg-white p-6">
             <h2 className="text-xl font-bold text-[#154C52]">Para restaurantes</h2>
             <ul className="mt-3 space-y-2 text-sm text-slate-700">

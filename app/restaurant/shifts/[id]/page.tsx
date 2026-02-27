@@ -1,8 +1,8 @@
 import { NavPortal } from "@/components/nav";
-import { Caja, ChipEstado, Subtitulo } from "@/components/ui";
+import { Caja, ChipEstado, StarRatingField, Stars, Subtitulo } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { completeShift, hireWaiter, rateWaiter } from "@/app/restaurant/actions";
+import { completeShift, deleteShift, hireWaiter, rateWaiter } from "@/app/restaurant/actions";
 
 type WaiterBasico = {
   full_name: string | null;
@@ -42,6 +42,21 @@ export default async function ShiftDetailRestaurantPage({
     return <p>Turno no encontrado.</p>;
   }
 
+  const waiterIds = Array.from(new Set((apps ?? []).map((a) => a.waiter_id)));
+  const { data: waiterRatings } = waiterIds.length
+    ? await supabase.from("ratings").select("ratee_id, score").eq("ratee_role", "waiter").in("ratee_id", waiterIds)
+    : { data: [] as { ratee_id: string; score: number }[] };
+
+  const waiterAvg = new Map<string, number>();
+  for (const id of waiterIds) {
+    const rows = (waiterRatings ?? []).filter((r) => r.ratee_id === id);
+    if (!rows.length) continue;
+    waiterAvg.set(
+      id,
+      rows.reduce((acc, curr) => acc + curr.score, 0) / rows.length
+    );
+  }
+
   return (
     <div>
       <NavPortal
@@ -65,12 +80,20 @@ export default async function ShiftDetailRestaurantPage({
         <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
         <p className="mt-2 text-sm">{shift.requirements || "Sin requisitos específicos."}</p>
 
-        {shift.status === "contracted" && (
-          <form action={completeShift} className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-3">
+          {shift.status === "contracted" && (
+            <form action={completeShift}>
+              <input type="hidden" name="shift_id" value={shift.id} />
+              <button type="submit">Marcar turno como completado</button>
+            </form>
+          )}
+          <form action={deleteShift}>
             <input type="hidden" name="shift_id" value={shift.id} />
-            <button type="submit">Marcar turno como completado</button>
+            <button type="submit" className="bg-rose-700">
+              Borrar turno
+            </button>
           </form>
-        )}
+        </div>
       </Caja>
 
       <Caja>
@@ -84,6 +107,9 @@ export default async function ShiftDetailRestaurantPage({
                 <p className="font-medium">{waiter?.full_name || "Mozo"}</p>
                 <p className="text-sm text-slate-600">{waiter?.city || "Sin ciudad"}</p>
                 <p className="text-sm text-slate-600">Experiencia: {waiter?.experience || "No especificada"}</p>
+                <p className="text-sm text-slate-600">
+                  Promedio del mozo: <Stars value={waiterAvg.get(app.waiter_id) ?? null} />
+                </p>
                 <p className="text-xs text-slate-500">Estado: {app.status}</p>
 
                 {shift.status === "open" && app.status === "applied" && (
@@ -107,12 +133,7 @@ export default async function ShiftDetailRestaurantPage({
           <form action={rateWaiter} className="mt-3 space-y-3">
             <input type="hidden" name="shift_id" value={shift.id} />
             <input type="hidden" name="waiter_id" value={shift.hired_waiter_id} />
-            <div>
-              <label htmlFor="score" className="mb-1 block text-sm font-medium">
-                Puntaje (1-5)
-              </label>
-              <input id="score" name="score" type="number" min={1} max={5} defaultValue={5} required />
-            </div>
+            <StarRatingField name="score" idPrefix={`restaurant-rate-${shift.id}`} />
             <div>
               <label htmlFor="comment" className="mb-1 block text-sm font-medium">
                 Comentario

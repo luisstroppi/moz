@@ -122,6 +122,17 @@ export async function completeShift(formData: FormData) {
   revalidatePath("/restaurant");
 }
 
+export async function deleteShift(formData: FormData) {
+  const profile = await requireRole("restaurant");
+  const supabase = createClient();
+  const shiftId = String(formData.get("shift_id") ?? "");
+
+  await supabase.from("shifts").delete().eq("id", shiftId).eq("restaurant_id", profile.id);
+
+  revalidatePath("/restaurant");
+  redirect("/restaurant");
+}
+
 export async function rateWaiter(formData: FormData) {
   const profile = await requireRole("restaurant");
   const supabase = createClient();

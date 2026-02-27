@@ -25,3 +25,26 @@ button {
 a {
   @apply text-slate-900 underline-offset-2 hover:underline;
 }
+
+.star-rating {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  gap: 0.2rem;
+}
+
+.star-rating input {
+  display: none;
+}
+
+.star-rating label {
+  cursor: pointer;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #cbd5e1;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+  color: #f0cd1b;
+}

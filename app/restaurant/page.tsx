@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { NavPortal } from "@/components/nav";
-import { BannerPerfil, Caja, ChipEstado, Subtitulo } from "@/components/ui";
+import { BannerPerfil, Caja, ChevronCircleLink, ChipEstado, Subtitulo } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { deleteShift } from "@/app/restaurant/actions";
 
 function perfilCompleto(restaurant: { name: string | null; address: string | null; phone: string | null }) {
   return Boolean(restaurant?.name && restaurant?.address && restaurant?.phone);
@@ -57,9 +58,15 @@ export default async function RestaurantDashboard() {
               </p>
               <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
               <p className="text-sm text-slate-600">Postulaciones: {(shift.applications as unknown as { count: number }[])[0]?.count ?? 0}</p>
-              <Link href={`/restaurant/shifts/${shift.id}`} className="mt-2 inline-block text-sm">
-                Ver detalle
-              </Link>
+              <div className="mt-3 flex items-center justify-between">
+                <form action={deleteShift}>
+                  <input type="hidden" name="shift_id" value={shift.id} />
+                  <button type="submit" className="bg-rose-700">
+                    Borrar turno
+                  </button>
+                </form>
+                <ChevronCircleLink href={`/restaurant/shifts/${shift.id}`} label={`Ver detalle del turno ${shift.title}`} />
+              </div>
             </li>
           ))}
 

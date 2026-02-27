@@ -67,6 +67,7 @@ App en: [http://localhost:3000](http://localhost:3000)
 1. Abrir Supabase Dashboard > SQL Editor.
 2. Ejecutar `supabase/migrations/202602270001_init_moz.sql`.
 3. Ejecutar `supabase/migrations/202602270002_roles_and_instruction_split.sql`.
+4. Ejecutar `supabase/migrations/202602270003_waiter_shift_visibility.sql`.
 
 ### Opción B: Supabase CLI
 

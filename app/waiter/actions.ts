@@ -56,6 +56,7 @@ export async function withdrawApplication(formData: FormData) {
     .eq("status", "applied");
 
   revalidatePath("/waiter/my-shifts");
+  revalidatePath("/waiter");
   revalidatePath(`/waiter/shifts/${shiftId}`);
 }
 
@@ -77,4 +78,5 @@ export async function rateRestaurant(formData: FormData) {
   });
 
   revalidatePath("/waiter/my-shifts");
+  revalidatePath("/waiter");
 }

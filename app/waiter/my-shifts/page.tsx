@@ -1,14 +1,16 @@
 import { NavPortal } from "@/components/nav";
-import { Caja, ChipEstado, Subtitulo } from "@/components/ui";
+import { Caja, ChipEstado, StarRatingField, Subtitulo } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { rateRestaurant } from "@/app/waiter/actions";
+import { rateRestaurant, withdrawApplication } from "@/app/waiter/actions";
 
 type ShiftLite = {
   id: string;
   title: string;
   status: string;
   restaurant_id: string;
+  start_at: string;
+  end_at: string;
   restaurants: { name: string | null } | { name: string | null }[] | null;
 };
 
@@ -22,7 +24,7 @@ export default async function MyShiftsPage() {
       .select("id, status, shift_id, shifts(id, title, status, start_at, end_at, restaurant_id, restaurants(name))")
       .eq("waiter_id", profile.id)
       .order("created_at", { ascending: false }),
-    supabase.from("ratings").select("shift_id").eq("rater_id", profile.id)
+    supabase.from("ratings").select("shift_id").eq("rater_id", profile.id).eq("rater_role", "waiter")
   ]);
 
   const ratedShiftIds = new Set((myRatings ?? []).map((r) => r.shift_id));
@@ -58,15 +60,31 @@ export default async function MyShiftsPage() {
                 </div>
                 <p className="text-sm text-slate-600">Restaurante: {restaurant?.name || "Sin nombre"}</p>
                 <p className="text-sm text-slate-600">Postulación: {app.status}</p>
+                <p className="text-sm text-slate-600">
+                  {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
+                </p>
+
+                {app.status === "applied" && (
+                  <form action={withdrawApplication} className="mt-3">
+                    <input type="hidden" name="shift_id" value={shift.id} />
+                    <button type="submit" className="bg-rose-700">
+                      Cancelar postulación
+                    </button>
+                  </form>
+                )}
 
                 {shift.status === "completed" && app.status === "hired" && !ratedShiftIds.has(shift.id) && (
                   <form action={rateRestaurant} className="mt-3 space-y-2">
                     <input type="hidden" name="shift_id" value={shift.id} />
                     <input type="hidden" name="restaurant_id" value={shift.restaurant_id} />
-                    <input name="score" type="number" min={1} max={5} defaultValue={5} required />
+                    <StarRatingField name="score" idPrefix={`rate-${shift.id}`} />
                     <textarea name="comment" rows={2} placeholder="Comentario" />
                     <button type="submit">Calificar restaurante</button>
                   </form>
+                )}
+
+                {shift.status === "completed" && app.status === "hired" && ratedShiftIds.has(shift.id) && (
+                  <p className="mt-3 text-sm font-medium text-[#154C52]">Ya calificaste este turno.</p>
                 )}
               </li>
             );

@@ -1,10 +1,20 @@
-import Link from "next/link";
 import { NavPortal } from "@/components/nav";
-import { BannerPerfil, Caja, ChipEstado, Subtitulo } from "@/components/ui";
+import { BannerPerfil, Caja, ChevronCircleLink, ChipEstado, Stars, Subtitulo } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { withdrawApplication } from "@/app/waiter/actions";
 
-type RestaurantLite = { name: string | null };
+type RestaurantLite = { id: string; name: string | null };
+
+type AppShift = {
+  id: string;
+  title: string;
+  status: string;
+  start_at: string;
+  end_at: string;
+  restaurant_id: string;
+  restaurants: { name: string | null } | { name: string | null }[] | null;
+};
 
 function perfilCompleto(waiter: { full_name: string | null; phone: string | null; city: string | null }) {
   return Boolean(waiter?.full_name && waiter?.phone && waiter?.city);
@@ -24,7 +34,7 @@ export default async function WaiterDashboard({
 
   let shiftsQuery = supabase
     .from("shifts")
-    .select("id, title, start_at, end_at, requirements, status, waiter_role, restaurants(name)")
+    .select("id, title, start_at, end_at, requirements, status, waiter_role, restaurants(id, name)")
     .eq("status", "open")
     .order("start_at", { ascending: true });
 
@@ -35,10 +45,17 @@ export default async function WaiterDashboard({
     shiftsQuery = shiftsQuery.eq("waiter_role", roleFilter);
   }
 
-  const [{ data: waiter }, { data: shifts }] = await Promise.all([
+  const [{ data: waiter }, { data: shifts }, { data: myApps }] = await Promise.all([
     supabase.from("waiters").select("full_name, phone, city").eq("id", profile.id).single(),
-    shiftsQuery
+    shiftsQuery,
+    supabase
+      .from("applications")
+      .select("id, status, shift_id, shifts(id, title, status, start_at, end_at, restaurant_id, restaurants(name))")
+      .eq("waiter_id", profile.id)
+      .order("created_at", { ascending: false })
   ]);
+
+  const appByShift = new Map((myApps ?? []).map((a) => [a.shift_id, a.status]));
 
   const shiftsFiltrados =
     restaurantFilter && shifts
@@ -48,6 +65,24 @@ export default async function WaiterDashboard({
           return (rest?.name ?? "").toLowerCase().includes(restaurantFilter.toLowerCase());
         })
       : shifts;
+
+  const restaurantIds = Array.from(
+    new Set((shiftsFiltrados ?? []).map((s) => normalizeRestaurant(s.restaurants)?.id).filter((v): v is string => Boolean(v)))
+  );
+
+  const { data: restaurantRatings } = restaurantIds.length
+    ? await supabase.from("ratings").select("ratee_id, score").eq("ratee_role", "restaurant").in("ratee_id", restaurantIds)
+    : { data: [] as { ratee_id: string; score: number }[] };
+
+  const restaurantAvg = new Map<string, number>();
+  for (const rid of restaurantIds) {
+    const rows = (restaurantRatings ?? []).filter((r) => r.ratee_id === rid);
+    if (!rows.length) continue;
+    restaurantAvg.set(
+      rid,
+      rows.reduce((acc, curr) => acc + curr.score, 0) / rows.length
+    );
+  }
 
   return (
     <div>
@@ -64,6 +99,42 @@ export default async function WaiterDashboard({
       {!perfilCompleto(waiter ?? { full_name: null, phone: null, city: null }) && (
         <BannerPerfil texto="Completá tu perfil para tener más chances de contratación." href="/waiter/profile" />
       )}
+
+      <Caja>
+        <Subtitulo>Mis postulaciones (estado actual)</Subtitulo>
+        <ul className="mt-3 space-y-3">
+          {myApps?.map((app) => {
+            const shiftRaw = app.shifts as AppShift | AppShift[] | null;
+            const shift = Array.isArray(shiftRaw) ? shiftRaw[0] ?? null : shiftRaw;
+            if (!shift) return null;
+            const restaurantRaw = shift.restaurants;
+            const restaurant = Array.isArray(restaurantRaw) ? restaurantRaw[0] ?? null : restaurantRaw;
+
+            return (
+              <li key={app.id} className="rounded-lg border border-slate-200 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="font-medium">{shift.title}</p>
+                  <ChipEstado estado={shift.status} />
+                </div>
+                <p className="text-sm text-slate-600">Restaurante: {restaurant?.name || "Sin nombre"}</p>
+                <p className="text-sm text-slate-600">Postulación: {app.status}</p>
+                <p className="text-sm text-slate-600">
+                  {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
+                </p>
+                {app.status === "applied" && (
+                  <form action={withdrawApplication} className="mt-3">
+                    <input type="hidden" name="shift_id" value={shift.id} />
+                    <button type="submit" className="bg-rose-700">
+                      Cancelar postulación
+                    </button>
+                  </form>
+                )}
+              </li>
+            );
+          })}
+          {!myApps?.length && <li className="text-sm text-slate-500">Todavía no te postulaste a turnos.</li>}
+        </ul>
+      </Caja>
 
       <Caja>
         <Subtitulo>Buscar turnos disponibles</Subtitulo>
@@ -102,8 +173,8 @@ export default async function WaiterDashboard({
 
         <ul className="mt-4 space-y-3">
           {shiftsFiltrados?.map((shift) => {
-            const restRaw = shift.restaurants as RestaurantLite | RestaurantLite[] | null;
-            const rest = Array.isArray(restRaw) ? restRaw[0] ?? null : restRaw;
+            const rest = normalizeRestaurant(shift.restaurants);
+            const myStatus = appByShift.get(shift.id);
             return (
               <li key={shift.id} className="rounded-lg border border-slate-200 p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
@@ -111,19 +182,16 @@ export default async function WaiterDashboard({
                   <ChipEstado estado={shift.status} />
                 </div>
                 <p className="text-sm text-slate-600">Restaurante: {rest?.name || "Sin nombre"}</p>
+                <p className="text-sm text-slate-600">
+                  Calificación restaurante: <Stars value={rest ? restaurantAvg.get(rest.id) ?? null : null} />
+                </p>
                 <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
                 <p className="text-sm text-slate-600">
                   {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
                 </p>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm font-medium">Ver y postularme</span>
-                  <Link
-                    href={`/waiter/shifts/${shift.id}`}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primario text-white no-underline"
-                    aria-label={`Ver y postularme al turno ${shift.title}`}
-                  >
-                    &#8250;
-                  </Link>
+                {myStatus && <p className="mt-1 text-sm font-medium text-[#5E1F1F]">Ya postulaste: {myStatus}</p>}
+                <div className="mt-3 flex justify-end">
+                  <ChevronCircleLink href={`/waiter/shifts/${shift.id}`} label={`Ver turno ${shift.title}`} />
                 </div>
               </li>
             );
@@ -145,4 +213,8 @@ function labelRol(value: string | null) {
   };
   if (!value) return "Sin definir";
   return map[value] ?? value;
+}
+
+function normalizeRestaurant(value: RestaurantLite | RestaurantLite[] | null) {
+  return Array.isArray(value) ? value[0] ?? null : value;
 }
