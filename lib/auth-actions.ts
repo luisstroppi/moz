@@ -50,7 +50,11 @@ export async function loginAction(formData: FormData) {
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single<{ role: Role }>();
 
-  redirect(profile?.role === "restaurant" ? "/restaurant" : "/waiter");
+  if (!profile) {
+    redirect("/auth/signup?error=" + encodeURIComponent("Tu cuenta no tiene perfil. Seleccioná un rol para continuar."));
+  }
+
+  redirect(profile.role === "restaurant" ? "/restaurant" : "/waiter");
 }
 
 export async function logoutAction() {

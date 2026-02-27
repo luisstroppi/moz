@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single<{ role: "restaurant" | "waiter" }>();
 
     if (!profile) {
-      if (isAuthRoute) return response;
+      if (isAuthRoute && pathname.startsWith("/auth/signup")) return response;
       const url = request.nextUrl.clone();
       url.pathname = "/auth/signup";
       return NextResponse.redirect(url);
