@@ -22,19 +22,26 @@ export async function middleware(request: NextRequest) {
   if (user && (isRestaurantRoute || isWaiterRoute || isAuthRoute)) {
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single<{ role: "restaurant" | "waiter" }>();
 
-    if (isAuthRoute) {
+    if (!profile) {
+      if (isAuthRoute) return response;
       const url = request.nextUrl.clone();
-      url.pathname = profile?.role === "restaurant" ? "/restaurant" : "/waiter";
+      url.pathname = "/auth/signup";
       return NextResponse.redirect(url);
     }
 
-    if (isRestaurantRoute && profile?.role !== "restaurant") {
+    if (isAuthRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = profile.role === "restaurant" ? "/restaurant" : "/waiter";
+      return NextResponse.redirect(url);
+    }
+
+    if (isRestaurantRoute && profile.role !== "restaurant") {
       const url = request.nextUrl.clone();
       url.pathname = "/waiter";
       return NextResponse.redirect(url);
     }
 
-    if (isWaiterRoute && profile?.role !== "waiter") {
+    if (isWaiterRoute && profile.role !== "waiter") {
       const url = request.nextUrl.clone();
       url.pathname = "/restaurant";
       return NextResponse.redirect(url);
