@@ -9,14 +9,16 @@ export function NavPortal({
   links: { href: string; label: string }[];
 }) {
   return (
-    <header className="mb-6 rounded-2xl border border-amber-100 bg-white/95 p-4 shadow-sm">
+    <header className="mb-6 rounded-2xl border border-[#154C52]/25 bg-[#154C52] p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.15em] text-amber-700">Moz by Giunti</p>
-          <h1 className="text-xl font-semibold">{titulo}</h1>
+          <p className="text-xs uppercase tracking-[0.15em] text-[#F0CD1B]">Moz by Giunti</p>
+          <h1 className="text-xl font-semibold text-[#FDF9E8]">{titulo}</h1>
         </div>
         <form action={logoutAction}>
-          <button type="submit">Cerrar sesión</button>
+          <button type="submit" className="bg-[#5E1F1F] text-[#FDF9E8]">
+            Cerrar sesión
+          </button>
         </form>
       </div>
       <nav className="mt-4 flex flex-wrap gap-3 text-sm">
@@ -24,7 +26,7 @@ export function NavPortal({
           <Link
             key={link.href}
             href={link.href}
-            className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-1 no-underline hover:bg-amber-50"
+            className="rounded-xl border border-[#FDF9E8]/40 bg-[#FDF9E8]/10 px-3 py-1 text-[#FDF9E8] no-underline hover:bg-[#FDF9E8]/20"
           >
             {link.label}
           </Link>

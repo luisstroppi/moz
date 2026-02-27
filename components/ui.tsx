@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export function Caja({ children }: { children: React.ReactNode }) {
-  return <section className="rounded-2xl border border-amber-100 bg-white/95 p-5 shadow-sm">{children}</section>;
+  return <section className="rounded-2xl border border-[#154C52]/20 bg-[#FDF9E8] p-5 shadow-sm">{children}</section>;
 }
 
 export function Titulo({ children }: { children: React.ReactNode }) {
@@ -32,7 +32,7 @@ export function BannerPerfil({
 export function ChipEstado({ estado }: { estado: string }) {
   const colores: Record<string, string> = {
     open: "bg-emerald-100 text-emerald-800",
-    contracted: "bg-amber-100 text-amber-900",
+    contracted: "bg-[#F0CD1B]/30 text-[#5E1F1F]",
     completed: "bg-slate-200 text-slate-800",
     cancelled: "bg-rose-100 text-rose-800"
   };
