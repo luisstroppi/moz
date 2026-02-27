@@ -16,7 +16,7 @@ export default async function RestaurantDashboard() {
     supabase.from("restaurants").select("name, address, phone").eq("id", profile.id).single(),
     supabase
       .from("shifts")
-      .select("id, title, start_at, end_at, status, applications(count)")
+      .select("id, title, start_at, end_at, status, waiter_role, applications(count)")
       .eq("restaurant_id", profile.id)
       .order("start_at", { ascending: true })
   ]);
@@ -55,6 +55,7 @@ export default async function RestaurantDashboard() {
               <p className="text-sm text-slate-600">
                 {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
               </p>
+              <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
               <p className="text-sm text-slate-600">Postulaciones: {(shift.applications as unknown as { count: number }[])[0]?.count ?? 0}</p>
               <Link href={`/restaurant/shifts/${shift.id}`} className="mt-2 inline-block text-sm">
                 Ver detalle
@@ -67,4 +68,16 @@ export default async function RestaurantDashboard() {
       </Caja>
     </div>
   );
+}
+
+function labelRol(value: string | null) {
+  const map: Record<string, string> = {
+    mozo: "Mozo",
+    runner: "Runner",
+    bacha: "Bacha",
+    cafetero: "Cafetero",
+    mozo_mostrador: "Mozo de mostrador"
+  };
+  if (!value) return "Sin definir";
+  return map[value] ?? value;
 }

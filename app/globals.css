@@ -8,16 +8,18 @@
 
 body {
   @apply bg-fondo text-slate-900 antialiased;
+  font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+  background-image: radial-gradient(circle at 10% 10%, #fdf6ee 0%, #f8f2e7 45%, #f4eadb 100%);
 }
 
 input,
 textarea,
 select {
-  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none;
+  @apply w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-400 focus:outline-none;
 }
 
 button {
-  @apply rounded-lg bg-primario px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply rounded-xl bg-primario px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 a {

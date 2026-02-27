@@ -32,7 +32,19 @@ export default async function NewShiftPage({
             </label>
             <input id="title" name="title" required placeholder="Ej: Turno noche viernes" />
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div>
+              <label htmlFor="waiter_role" className="mb-1 block text-sm font-medium">
+                Puesto solicitado
+              </label>
+              <select id="waiter_role" name="waiter_role" required defaultValue="mozo">
+                <option value="mozo">Mozo</option>
+                <option value="runner">Runner</option>
+                <option value="bacha">Bacha</option>
+                <option value="cafetero">Cafetero</option>
+                <option value="mozo_mostrador">Mozo de mostrador</option>
+              </select>
+            </div>
             <div>
               <label htmlFor="start_at" className="mb-1 block text-sm font-medium">
                 Inicio

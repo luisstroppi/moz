@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export function Caja({ children }: { children: React.ReactNode }) {
-  return <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">{children}</section>;
+  return <section className="rounded-2xl border border-amber-100 bg-white/95 p-5 shadow-sm">{children}</section>;
 }
 
 export function Titulo({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,7 @@ export function BannerPerfil({
   href: string;
 }) {
   return (
-    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+    <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
       <p className="mb-2">{texto}</p>
       <Link href={href} className="font-medium text-amber-800">
         Completar ahora
@@ -32,7 +32,7 @@ export function BannerPerfil({
 export function ChipEstado({ estado }: { estado: string }) {
   const colores: Record<string, string> = {
     open: "bg-emerald-100 text-emerald-800",
-    contracted: "bg-sky-100 text-sky-800",
+    contracted: "bg-amber-100 text-amber-900",
     completed: "bg-slate-200 text-slate-800",
     cancelled: "bg-rose-100 text-rose-800"
   };

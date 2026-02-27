@@ -21,7 +21,7 @@ export default async function ShiftDetailRestaurantPage({
   const [{ data: shift }, { data: apps }, { data: rating }] = await Promise.all([
     supabase
       .from("shifts")
-      .select("id, title, start_at, end_at, requirements, status, hired_waiter_id")
+      .select("id, title, start_at, end_at, requirements, status, waiter_role, hired_waiter_id")
       .eq("id", params.id)
       .eq("restaurant_id", profile.id)
       .single(),
@@ -62,6 +62,7 @@ export default async function ShiftDetailRestaurantPage({
         <p className="text-sm text-slate-600">
           {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
         </p>
+        <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
         <p className="mt-2 text-sm">{shift.requirements || "Sin requisitos específicos."}</p>
 
         {shift.status === "contracted" && (
@@ -124,4 +125,16 @@ export default async function ShiftDetailRestaurantPage({
       )}
     </div>
   );
+}
+
+function labelRol(value: string | null) {
+  const map: Record<string, string> = {
+    mozo: "Mozo",
+    runner: "Runner",
+    bacha: "Bacha",
+    cafetero: "Cafetero",
+    mozo_mostrador: "Mozo de mostrador"
+  };
+  if (!value) return "Sin definir";
+  return map[value] ?? value;
 }

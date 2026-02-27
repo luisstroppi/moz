@@ -5,6 +5,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 
+const WAITER_ROLES = ["mozo", "runner", "bacha", "cafetero", "mozo_mostrador"] as const;
+
+function normalizeWaiterRole(value: FormDataEntryValue | null): (typeof WAITER_ROLES)[number] | null {
+  const role = String(value ?? "").trim();
+  if (!role) return null;
+  return WAITER_ROLES.includes(role as (typeof WAITER_ROLES)[number]) ? (role as (typeof WAITER_ROLES)[number]) : null;
+}
+
 export async function saveRestaurantProfile(formData: FormData) {
   const profile = await requireRole("restaurant");
   const supabase = createClient();
@@ -30,7 +38,8 @@ export async function createShift(formData: FormData) {
     title: String(formData.get("title") ?? "").trim(),
     start_at: String(formData.get("start_at")),
     end_at: String(formData.get("end_at")),
-    requirements: String(formData.get("requirements") ?? "").trim()
+    requirements: String(formData.get("requirements") ?? "").trim(),
+    waiter_role: normalizeWaiterRole(formData.get("waiter_role"))
   });
 
   if (error) {
@@ -44,12 +53,16 @@ export async function createShift(formData: FormData) {
 export async function createInstruction(formData: FormData) {
   const profile = await requireRole("restaurant");
   const supabase = createClient();
+  const kind = String(formData.get("kind") ?? "company").trim() === "role" ? "role" : "company";
+  const waiterRole = normalizeWaiterRole(formData.get("waiter_role"));
 
   await supabase.from("instructions").insert({
     restaurant_id: profile.id,
     title: String(formData.get("title") ?? "").trim(),
     youtube_url: String(formData.get("youtube_url") ?? "").trim(),
-    notes: String(formData.get("notes") ?? "").trim() || null
+    notes: String(formData.get("notes") ?? "").trim() || null,
+    kind,
+    waiter_role: kind === "role" ? waiterRole : null
   });
 
   revalidatePath("/restaurant/instructions");

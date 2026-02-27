@@ -15,17 +15,19 @@ Marketplace tipo Uber para conectar **restaurantes** y **mozos** por turnos.
 - Portal restaurante:
   - Completar perfil
   - Publicar turnos
+  - Definir puesto del turno (`mozo`, `runner`, `bacha`, `cafetero`, `mozo de mostrador`)
   - Ver postulantes
   - Contratar mozo
   - Marcar turno como completado
   - Calificar mozo
-  - CRUD de instructivos
+  - CRUD de instructivos (políticas/cultura + capacitación por puesto)
 - Portal mozo:
   - Completar perfil
   - Buscar turnos abiertos (filtro por fecha y restaurante)
   - Postularse/cancelar postulación
   - Ver mis turnos
   - Calificar restaurante en turnos completados
+  - Ver reseñas recibidas y reseñas realizadas
   - Ver link de propina + QR
 - Página pública de propina: `/tip/[waiterId]` (simulada)
 
@@ -64,6 +66,7 @@ App en: [http://localhost:3000](http://localhost:3000)
 
 1. Abrir Supabase Dashboard > SQL Editor.
 2. Ejecutar `supabase/migrations/202602270001_init_moz.sql`.
+3. Ejecutar `supabase/migrations/202602270002_roles_and_instruction_split.sql`.
 
 ### Opción B: Supabase CLI
 

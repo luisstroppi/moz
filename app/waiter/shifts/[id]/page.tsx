@@ -21,7 +21,7 @@ export default async function ShiftDetailWaiterPage({
   const [{ data: shift }, { data: application }, { data: instructions }] = await Promise.all([
     supabase
       .from("shifts")
-      .select("id, title, start_at, end_at, requirements, status, restaurant_id, restaurants(name, description, address)")
+      .select("id, title, start_at, end_at, requirements, status, waiter_role, restaurant_id, restaurants(name, description, address)")
       .eq("id", params.id)
       .single(),
     supabase
@@ -30,7 +30,7 @@ export default async function ShiftDetailWaiterPage({
       .eq("shift_id", params.id)
       .eq("waiter_id", profile.id)
       .maybeSingle(),
-    supabase.from("instructions").select("id, title, youtube_url, notes, restaurant_id")
+    supabase.from("instructions").select("id, title, youtube_url, notes, restaurant_id, kind, waiter_role")
   ]);
 
   if (!shift) {
@@ -39,7 +39,20 @@ export default async function ShiftDetailWaiterPage({
 
   const restaurantRaw = shift.restaurants as RestaurantShift | RestaurantShift[] | null;
   const restaurant = Array.isArray(restaurantRaw) ? restaurantRaw[0] ?? null : restaurantRaw;
-  const instructionsForRestaurant = instructions?.filter((item) => item.restaurant_id === shift.restaurant_id) ?? [];
+  const instructionsForRestaurant =
+    instructions?.filter((item) => {
+      if (item.restaurant_id !== shift.restaurant_id) return false;
+      if (item.kind !== "role") return true;
+      return !item.waiter_role || item.waiter_role === shift.waiter_role;
+    }) ?? [];
+
+  const roleLabel: Record<string, string> = {
+    mozo: "Mozo",
+    runner: "Runner",
+    bacha: "Bacha",
+    cafetero: "Cafetero",
+    mozo_mostrador: "Mozo de mostrador"
+  };
 
   return (
     <div>
@@ -59,6 +72,7 @@ export default async function ShiftDetailWaiterPage({
           <ChipEstado estado={shift.status} />
         </div>
         <p className="text-sm text-slate-600">Restaurante: {restaurant?.name || "Sin nombre"}</p>
+        {shift.waiter_role && <p className="text-sm text-slate-600">Puesto: {roleLabel[shift.waiter_role] ?? shift.waiter_role}</p>}
         <p className="text-sm text-slate-600">
           {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
         </p>

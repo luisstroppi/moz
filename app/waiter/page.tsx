@@ -13,22 +13,26 @@ function perfilCompleto(waiter: { full_name: string | null; phone: string | null
 export default async function WaiterDashboard({
   searchParams
 }: {
-  searchParams: { date?: string; restaurant?: string };
+  searchParams: { date?: string; restaurant?: string; role?: string };
 }) {
   const profile = await requireRole("waiter");
   const supabase = createClient();
 
   const dateFilter = searchParams.date;
   const restaurantFilter = searchParams.restaurant;
+  const roleFilter = searchParams.role;
 
   let shiftsQuery = supabase
     .from("shifts")
-    .select("id, title, start_at, end_at, requirements, status, restaurants(name)")
+    .select("id, title, start_at, end_at, requirements, status, waiter_role, restaurants(name)")
     .eq("status", "open")
     .order("start_at", { ascending: true });
 
   if (dateFilter) {
     shiftsQuery = shiftsQuery.gte("start_at", `${dateFilter}T00:00:00`).lte("start_at", `${dateFilter}T23:59:59`);
+  }
+  if (roleFilter) {
+    shiftsQuery = shiftsQuery.eq("waiter_role", roleFilter);
   }
 
   const [{ data: waiter }, { data: shifts }] = await Promise.all([
@@ -63,7 +67,7 @@ export default async function WaiterDashboard({
 
       <Caja>
         <Subtitulo>Buscar turnos disponibles</Subtitulo>
-        <form className="mt-3 grid gap-3 md:grid-cols-3">
+        <form className="mt-3 grid gap-3 md:grid-cols-4">
           <div>
             <label htmlFor="date" className="mb-1 block text-sm font-medium">
               Fecha
@@ -75,6 +79,19 @@ export default async function WaiterDashboard({
               Restaurante
             </label>
             <input id="restaurant" name="restaurant" defaultValue={restaurantFilter} placeholder="Nombre" />
+          </div>
+          <div>
+            <label htmlFor="role" className="mb-1 block text-sm font-medium">
+              Puesto
+            </label>
+            <select id="role" name="role" defaultValue={roleFilter}>
+              <option value="">Todos</option>
+              <option value="mozo">Mozo</option>
+              <option value="runner">Runner</option>
+              <option value="bacha">Bacha</option>
+              <option value="cafetero">Cafetero</option>
+              <option value="mozo_mostrador">Mozo de mostrador</option>
+            </select>
           </div>
           <div className="self-end">
             <button type="submit" className="w-full">
@@ -94,12 +111,20 @@ export default async function WaiterDashboard({
                   <ChipEstado estado={shift.status} />
                 </div>
                 <p className="text-sm text-slate-600">Restaurante: {rest?.name || "Sin nombre"}</p>
+                <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
                 <p className="text-sm text-slate-600">
                   {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
                 </p>
-                <Link href={`/waiter/shifts/${shift.id}`} className="mt-2 inline-block text-sm">
-                  Ver y postularme
-                </Link>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-sm font-medium">Ver y postularme</span>
+                  <Link
+                    href={`/waiter/shifts/${shift.id}`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primario text-white no-underline"
+                    aria-label={`Ver y postularme al turno ${shift.title}`}
+                  >
+                    &#8250;
+                  </Link>
+                </div>
               </li>
             );
           })}
@@ -108,4 +133,16 @@ export default async function WaiterDashboard({
       </Caja>
     </div>
   );
+}
+
+function labelRol(value: string | null) {
+  const map: Record<string, string> = {
+    mozo: "Mozo",
+    runner: "Runner",
+    bacha: "Bacha",
+    cafetero: "Cafetero",
+    mozo_mostrador: "Mozo de mostrador"
+  };
+  if (!value) return "Sin definir";
+  return map[value] ?? value;
 }
