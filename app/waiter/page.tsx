@@ -4,16 +4,29 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { withdrawApplication } from "@/app/waiter/actions";
 
-type RestaurantLite = { id: string; name: string | null };
+type ShiftOpen = {
+  id: string;
+  title: string;
+  start_at: string;
+  end_at: string;
+  status: string;
+  waiter_role: string | null;
+  restaurant_id: string;
+};
 
-type AppShift = {
+type ApplicationLite = {
+  id: string;
+  status: string;
+  shift_id: string;
+};
+
+type ShiftLite = {
   id: string;
   title: string;
   status: string;
   start_at: string;
   end_at: string;
   restaurant_id: string;
-  restaurants: { name: string | null } | { name: string | null }[] | null;
 };
 
 function perfilCompleto(waiter: { full_name: string | null; phone: string | null; city: string | null }) {
@@ -34,7 +47,7 @@ export default async function WaiterDashboard({
 
   let shiftsQuery = supabase
     .from("shifts")
-    .select("id, title, start_at, end_at, requirements, status, waiter_role, restaurants(id, name)")
+    .select("id, title, start_at, end_at, status, waiter_role, restaurant_id")
     .eq("status", "open")
     .order("start_at", { ascending: true });
 
@@ -45,37 +58,33 @@ export default async function WaiterDashboard({
     shiftsQuery = shiftsQuery.eq("waiter_role", roleFilter);
   }
 
-  const [{ data: waiter }, { data: shifts }, { data: myApps }] = await Promise.all([
+  const [{ data: waiter }, { data: shiftsOpen }, { data: myAppsRaw }] = await Promise.all([
     supabase.from("waiters").select("full_name, phone, city").eq("id", profile.id).single(),
     shiftsQuery,
-    supabase
-      .from("applications")
-      .select("id, status, shift_id, shifts(id, title, status, start_at, end_at, restaurant_id, restaurants(name))")
-      .eq("waiter_id", profile.id)
-      .order("created_at", { ascending: false })
+    supabase.from("applications").select("id, status, shift_id").eq("waiter_id", profile.id).order("created_at", { ascending: false })
   ]);
 
-  const appByShift = new Map((myApps ?? []).map((a) => [a.shift_id, a.status]));
+  const myApps = (myAppsRaw ?? []) as ApplicationLite[];
+  const appByShift = new Map(myApps.map((a) => [a.shift_id, a.status]));
+
+  const shifts = (shiftsOpen ?? []) as ShiftOpen[];
+  const openRestaurantIds = Array.from(new Set(shifts.map((s) => s.restaurant_id)));
+  const { data: openRestaurants } = openRestaurantIds.length
+    ? await supabase.from("restaurants").select("id, name").in("id", openRestaurantIds)
+    : { data: [] as { id: string; name: string | null }[] };
+  const openRestaurantById = new Map((openRestaurants ?? []).map((r) => [r.id, r.name || "Sin nombre"]));
 
   const shiftsFiltrados =
-    restaurantFilter && shifts
-      ? shifts.filter((shift) => {
-          const restRaw = shift.restaurants as RestaurantLite | RestaurantLite[] | null;
-          const rest = Array.isArray(restRaw) ? restRaw[0] ?? null : restRaw;
-          return (rest?.name ?? "").toLowerCase().includes(restaurantFilter.toLowerCase());
-        })
+    restaurantFilter && shifts.length
+      ? shifts.filter((shift) => (openRestaurantById.get(shift.restaurant_id) ?? "").toLowerCase().includes(restaurantFilter.toLowerCase()))
       : shifts;
 
-  const restaurantIds = Array.from(
-    new Set((shiftsFiltrados ?? []).map((s) => normalizeRestaurant(s.restaurants)?.id).filter((v): v is string => Boolean(v)))
-  );
-
-  const { data: restaurantRatings } = restaurantIds.length
-    ? await supabase.from("ratings").select("ratee_id, score").eq("ratee_role", "restaurant").in("ratee_id", restaurantIds)
+  const { data: restaurantRatings } = openRestaurantIds.length
+    ? await supabase.from("ratings").select("ratee_id, score").eq("ratee_role", "restaurant").in("ratee_id", openRestaurantIds)
     : { data: [] as { ratee_id: string; score: number }[] };
 
   const restaurantAvg = new Map<string, number>();
-  for (const rid of restaurantIds) {
+  for (const rid of openRestaurantIds) {
     const rows = (restaurantRatings ?? []).filter((r) => r.ratee_id === rid);
     if (!rows.length) continue;
     restaurantAvg.set(
@@ -83,6 +92,17 @@ export default async function WaiterDashboard({
       rows.reduce((acc, curr) => acc + curr.score, 0) / rows.length
     );
   }
+
+  const appShiftIds = Array.from(new Set(myApps.map((a) => a.shift_id)));
+  const { data: appShiftsData } = appShiftIds.length
+    ? await supabase.from("shifts").select("id, title, status, start_at, end_at, restaurant_id").in("id", appShiftIds)
+    : { data: [] as ShiftLite[] };
+  const appShifts = (appShiftsData ?? []) as ShiftLite[];
+  const appRestaurantIds = Array.from(new Set(appShifts.map((s) => s.restaurant_id)));
+  const { data: appRestaurants } = appRestaurantIds.length
+    ? await supabase.from("restaurants").select("id, name").in("id", appRestaurantIds)
+    : { data: [] as { id: string; name: string | null }[] };
+  const appRestaurantById = new Map((appRestaurants ?? []).map((r) => [r.id, r.name || "Sin nombre"]));
 
   return (
     <div>
@@ -103,25 +123,20 @@ export default async function WaiterDashboard({
       <Caja>
         <Subtitulo>Mis postulaciones (estado actual)</Subtitulo>
         <ul className="mt-3 space-y-3">
-          {myApps?.map((app) => {
-            const shiftRaw = app.shifts as AppShift | AppShift[] | null;
-            const shift = Array.isArray(shiftRaw) ? shiftRaw[0] ?? null : shiftRaw;
-            if (!shift) return null;
-            const restaurantRaw = shift.restaurants;
-            const restaurant = Array.isArray(restaurantRaw) ? restaurantRaw[0] ?? null : restaurantRaw;
-
+          {appShifts.map((shift) => {
+            const appStatus = appByShift.get(shift.id) ?? "hired";
             return (
-              <li key={app.id} className="rounded-lg border border-slate-200 p-3">
+              <li key={shift.id} className="rounded-lg border border-slate-200 p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <p className="font-medium">{shift.title}</p>
                   <ChipEstado estado={shift.status} />
                 </div>
-                <p className="text-sm text-slate-600">Restaurante: {restaurant?.name || "Sin nombre"}</p>
-                <p className="text-sm text-slate-600">Postulación: {app.status}</p>
+                <p className="text-sm text-slate-600">Restaurante: {appRestaurantById.get(shift.restaurant_id) || "Sin nombre"}</p>
+                <p className="text-sm text-slate-600">Postulación: {appStatus}</p>
                 <p className="text-sm text-slate-600">
                   {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
                 </p>
-                {app.status === "applied" && (
+                {appStatus === "applied" && (
                   <form action={withdrawApplication} className="mt-3">
                     <input type="hidden" name="shift_id" value={shift.id} />
                     <button type="submit" className="bg-rose-700">
@@ -132,7 +147,7 @@ export default async function WaiterDashboard({
               </li>
             );
           })}
-          {!myApps?.length && <li className="text-sm text-slate-500">Todavía no te postulaste a turnos.</li>}
+          {!appShifts.length && <li className="text-sm text-slate-500">Todavía no te postulaste a turnos.</li>}
         </ul>
       </Caja>
 
@@ -172,8 +187,7 @@ export default async function WaiterDashboard({
         </form>
 
         <ul className="mt-4 space-y-3">
-          {shiftsFiltrados?.map((shift) => {
-            const rest = normalizeRestaurant(shift.restaurants);
+          {shiftsFiltrados.map((shift) => {
             const myStatus = appByShift.get(shift.id);
             return (
               <li key={shift.id} className="rounded-lg border border-slate-200 p-3">
@@ -181,9 +195,9 @@ export default async function WaiterDashboard({
                   <p className="font-medium">{shift.title}</p>
                   <ChipEstado estado={shift.status} />
                 </div>
-                <p className="text-sm text-slate-600">Restaurante: {rest?.name || "Sin nombre"}</p>
+                <p className="text-sm text-slate-600">Restaurante: {openRestaurantById.get(shift.restaurant_id) || "Sin nombre"}</p>
                 <p className="text-sm text-slate-600">
-                  Calificación restaurante: <Stars value={rest ? restaurantAvg.get(rest.id) ?? null : null} />
+                  Calificación restaurante: <Stars value={restaurantAvg.get(shift.restaurant_id) ?? null} />
                 </p>
                 <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
                 <p className="text-sm text-slate-600">
@@ -196,7 +210,7 @@ export default async function WaiterDashboard({
               </li>
             );
           })}
-          {!shiftsFiltrados?.length && <li className="text-sm text-slate-500">No hay turnos para estos filtros.</li>}
+          {!shiftsFiltrados.length && <li className="text-sm text-slate-500">No hay turnos para estos filtros.</li>}
         </ul>
       </Caja>
     </div>
@@ -213,8 +227,4 @@ function labelRol(value: string | null) {
   };
   if (!value) return "Sin definir";
   return map[value] ?? value;
-}
-
-function normalizeRestaurant(value: RestaurantLite | RestaurantLite[] | null) {
-  return Array.isArray(value) ? value[0] ?? null : value;
 }

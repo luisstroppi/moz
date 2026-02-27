@@ -4,27 +4,10 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { rateRestaurant, withdrawApplication } from "@/app/waiter/actions";
 
-type ShiftLite = {
-  id: string;
-  title: string;
-  status: string;
-  restaurant_id: string;
-  start_at: string;
-  end_at: string;
-  restaurants: { name: string | null } | { name: string | null }[] | null;
-};
-
 type ApplicationLite = {
   id: string;
   status: string;
   shift_id: string;
-  shifts: ShiftLite | ShiftLite[] | null;
-};
-
-type RestaurantToWaiterRating = {
-  shift_id: string;
-  score: number;
-  comment: string | null;
 };
 
 type ShiftRow = {
@@ -34,7 +17,17 @@ type ShiftRow = {
   restaurant_id: string;
   start_at: string;
   end_at: string;
-  restaurants: { name: string | null } | { name: string | null }[] | null;
+};
+
+type RestaurantRow = {
+  id: string;
+  name: string | null;
+};
+
+type RestaurantToWaiterRating = {
+  shift_id: string;
+  score: number;
+  comment: string | null;
 };
 
 type RenderItem = {
@@ -47,12 +40,8 @@ export default async function MyShiftsPage() {
   const profile = await requireRole("waiter");
   const supabase = createClient();
 
-  const [{ data: apps }, { data: myRatings }, { data: ratingsToMe }, { data: hiredShifts }] = await Promise.all([
-    supabase
-      .from("applications")
-      .select("id, status, shift_id, shifts(id, title, status, start_at, end_at, restaurant_id, restaurants(name))")
-      .eq("waiter_id", profile.id)
-      .order("created_at", { ascending: false }),
+  const [{ data: appsData }, { data: myRatings }, { data: ratingsToMe }, { data: hiredShiftsData }] = await Promise.all([
+    supabase.from("applications").select("id, status, shift_id").eq("waiter_id", profile.id).order("created_at", { ascending: false }),
     supabase.from("ratings").select("shift_id").eq("rater_id", profile.id).eq("rater_role", "waiter"),
     supabase
       .from("ratings")
@@ -62,38 +51,45 @@ export default async function MyShiftsPage() {
       .eq("ratee_id", profile.id),
     supabase
       .from("shifts")
-      .select("id, title, status, start_at, end_at, restaurant_id, restaurants(name)")
+      .select("id, title, status, start_at, end_at, restaurant_id")
       .eq("hired_waiter_id", profile.id)
       .in("status", ["contracted", "completed"])
       .order("start_at", { ascending: false })
   ]);
+
+  const apps = (appsData ?? []) as ApplicationLite[];
+  const hiredShifts = (hiredShiftsData ?? []) as ShiftRow[];
+
+  const appShiftIds = Array.from(new Set(apps.map((a) => a.shift_id)));
+  const { data: appShiftsData } = appShiftIds.length
+    ? await supabase.from("shifts").select("id, title, status, start_at, end_at, restaurant_id").in("id", appShiftIds)
+    : { data: [] as ShiftRow[] };
+  const appShifts = (appShiftsData ?? []) as ShiftRow[];
+
+  const allShiftsById = new Map<string, ShiftRow>();
+  for (const s of appShifts) allShiftsById.set(s.id, s);
+  for (const s of hiredShifts) allShiftsById.set(s.id, s);
+
+  const restaurantIds = Array.from(new Set(Array.from(allShiftsById.values()).map((s) => s.restaurant_id)));
+  const { data: restaurantsData } = restaurantIds.length
+    ? await supabase.from("restaurants").select("id, name").in("id", restaurantIds)
+    : { data: [] as RestaurantRow[] };
+  const restaurantById = new Map((restaurantsData ?? []).map((r) => [r.id, r.name || "Sin nombre"]));
 
   const ratedShiftIds = new Set((myRatings ?? []).map((r) => r.shift_id));
   const ratingByShift = new Map((ratingsToMe as RestaurantToWaiterRating[] | null)?.map((r) => [r.shift_id, r]) ?? []);
   const averageToMe =
     ratingsToMe && ratingsToMe.length ? ratingsToMe.reduce((acc, curr) => acc + curr.score, 0) / ratingsToMe.length : null;
 
-  const hiredById = new Map((hiredShifts ?? []).map((s) => [s.id, s]));
   const byShiftId = new Map<string, RenderItem>();
-
-  for (const app of (apps ?? []) as ApplicationLite[]) {
-    const shiftRaw = app.shifts;
-    const shift = (Array.isArray(shiftRaw) ? shiftRaw[0] ?? null : shiftRaw) ?? hiredById.get(app.shift_id) ?? null;
+  for (const app of apps) {
+    const shift = allShiftsById.get(app.shift_id);
     if (!shift) continue;
-    byShiftId.set(shift.id, {
-      key: app.id,
-      shift,
-      appStatus: app.status
-    });
+    byShiftId.set(shift.id, { key: app.id, shift, appStatus: app.status });
   }
-
-  for (const shift of (hiredShifts ?? []) as ShiftRow[]) {
+  for (const shift of hiredShifts) {
     if (!byShiftId.has(shift.id)) {
-      byShiftId.set(shift.id, {
-        key: `hired-${shift.id}`,
-        shift,
-        appStatus: "hired"
-      });
+      byShiftId.set(shift.id, { key: `hired-${shift.id}`, shift, appStatus: "hired" });
     }
   }
 
@@ -125,8 +121,6 @@ export default async function MyShiftsPage() {
         <ul className="mt-3 space-y-3">
           {items.map((item) => {
             const shift = item.shift;
-            const restaurantRaw = shift.restaurants;
-            const restaurant = Array.isArray(restaurantRaw) ? restaurantRaw[0] ?? null : restaurantRaw;
             const review = ratingByShift.get(shift.id);
 
             return (
@@ -135,7 +129,7 @@ export default async function MyShiftsPage() {
                   <p className="font-medium">{shift.title}</p>
                   <ChipEstado estado={shift.status} />
                 </div>
-                <p className="text-sm text-slate-600">Restaurante: {restaurant?.name || "Sin nombre"}</p>
+                <p className="text-sm text-slate-600">Restaurante: {restaurantById.get(shift.restaurant_id) || "Sin nombre"}</p>
                 <p className="text-sm text-slate-600">Postulación: {item.appStatus}</p>
                 <p className="text-sm text-slate-600">
                   {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
