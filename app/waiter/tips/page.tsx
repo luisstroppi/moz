@@ -1,3 +1,4 @@
+import Image from "next/image";
 import QRCode from "qrcode";
 import { NavPortal } from "@/components/nav";
 import { Caja, Subtitulo } from "@/components/ui";
@@ -35,7 +36,7 @@ export default async function WaiterTipsPage() {
         <a href={tipLink} target="_blank" rel="noreferrer" className="block break-all text-sm">
           {tipLink}
         </a>
-        <img src={qrDataUrl} alt="QR de propina" className="mt-4 h-48 w-48 rounded-lg border border-slate-200 p-2" />
+        <Image src={qrDataUrl} alt="QR de propina" width={192} height={192} className="mt-4 rounded-lg border border-slate-200 p-2" />
       </Caja>
 
       <Caja>
@@ -44,7 +45,7 @@ export default async function WaiterTipsPage() {
           {tips?.map((tip) => (
             <li key={tip.id} className="rounded-lg border border-slate-200 p-3">
               <p className="font-medium">${Number(tip.amount).toFixed(2)}</p>
-              {tip.message && <p className="text-sm text-slate-600">"{tip.message}"</p>}
+              {tip.message && <p className="text-sm text-slate-600">&quot;{tip.message}&quot;</p>}
               <p className="text-xs text-slate-500">{new Date(tip.created_at).toLocaleString("es-AR")}</p>
             </li>
           ))}
