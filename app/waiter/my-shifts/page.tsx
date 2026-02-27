@@ -14,17 +14,40 @@ type ShiftLite = {
   restaurants: { name: string | null } | { name: string | null }[] | null;
 };
 
+type ApplicationLite = {
+  id: string;
+  status: string;
+  shift_id: string;
+  shifts: ShiftLite | ShiftLite[] | null;
+};
+
 type RestaurantToWaiterRating = {
   shift_id: string;
   score: number;
   comment: string | null;
 };
 
+type ShiftRow = {
+  id: string;
+  title: string;
+  status: string;
+  restaurant_id: string;
+  start_at: string;
+  end_at: string;
+  restaurants: { name: string | null } | { name: string | null }[] | null;
+};
+
+type RenderItem = {
+  key: string;
+  shift: ShiftRow;
+  appStatus: string;
+};
+
 export default async function MyShiftsPage() {
   const profile = await requireRole("waiter");
   const supabase = createClient();
 
-  const [{ data: apps }, { data: myRatings }, { data: ratingsToMe }] = await Promise.all([
+  const [{ data: apps }, { data: myRatings }, { data: ratingsToMe }, { data: hiredShifts }] = await Promise.all([
     supabase
       .from("applications")
       .select("id, status, shift_id, shifts(id, title, status, start_at, end_at, restaurant_id, restaurants(name))")
@@ -36,13 +59,47 @@ export default async function MyShiftsPage() {
       .select("shift_id, score, comment")
       .eq("rater_role", "restaurant")
       .eq("ratee_role", "waiter")
-      .eq("ratee_id", profile.id)
+      .eq("ratee_id", profile.id),
+    supabase
+      .from("shifts")
+      .select("id, title, status, start_at, end_at, restaurant_id, restaurants(name)")
+      .eq("hired_waiter_id", profile.id)
+      .in("status", ["contracted", "completed"])
+      .order("start_at", { ascending: false })
   ]);
 
   const ratedShiftIds = new Set((myRatings ?? []).map((r) => r.shift_id));
   const ratingByShift = new Map((ratingsToMe as RestaurantToWaiterRating[] | null)?.map((r) => [r.shift_id, r]) ?? []);
   const averageToMe =
     ratingsToMe && ratingsToMe.length ? ratingsToMe.reduce((acc, curr) => acc + curr.score, 0) / ratingsToMe.length : null;
+
+  const hiredById = new Map((hiredShifts ?? []).map((s) => [s.id, s]));
+  const byShiftId = new Map<string, RenderItem>();
+
+  for (const app of (apps ?? []) as ApplicationLite[]) {
+    const shiftRaw = app.shifts;
+    const shift = (Array.isArray(shiftRaw) ? shiftRaw[0] ?? null : shiftRaw) ?? hiredById.get(app.shift_id) ?? null;
+    if (!shift) continue;
+    byShiftId.set(shift.id, {
+      key: app.id,
+      shift,
+      appStatus: app.status
+    });
+  }
+
+  for (const shift of (hiredShifts ?? []) as ShiftRow[]) {
+    if (!byShiftId.has(shift.id)) {
+      byShiftId.set(shift.id, {
+        key: `hired-${shift.id}`,
+        shift,
+        appStatus: "hired"
+      });
+    }
+  }
+
+  const items = Array.from(byShiftId.values()).sort(
+    (a, b) => new Date(b.shift.start_at).getTime() - new Date(a.shift.start_at).getTime()
+  );
 
   return (
     <div>
@@ -66,35 +123,20 @@ export default async function MyShiftsPage() {
         </div>
 
         <ul className="mt-3 space-y-3">
-          {apps?.map((app) => {
-            const shiftRaw = app.shifts as ShiftLite | ShiftLite[] | null;
-            const shift = Array.isArray(shiftRaw) ? shiftRaw[0] ?? null : shiftRaw;
-
-            if (!shift) {
-              return (
-                <li key={app.id} className="rounded-lg border border-amber-300 bg-amber-50 p-3">
-                  <p className="font-medium">Turno {app.shift_id}</p>
-                  <p className="text-sm text-slate-700">Postulación: {app.status}</p>
-                  <p className="text-sm text-slate-700">
-                    El turno existe, pero no se pudo cargar su detalle. Aplicá en Supabase la migración
-                    `202602270003_waiter_shift_visibility.sql`.
-                  </p>
-                </li>
-              );
-            }
-
+          {items.map((item) => {
+            const shift = item.shift;
             const restaurantRaw = shift.restaurants;
             const restaurant = Array.isArray(restaurantRaw) ? restaurantRaw[0] ?? null : restaurantRaw;
             const review = ratingByShift.get(shift.id);
 
             return (
-              <li key={app.id} className="rounded-lg border border-slate-200 p-3">
+              <li key={item.key} className="rounded-lg border border-slate-200 p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="font-medium">{shift.title}</p>
                   <ChipEstado estado={shift.status} />
                 </div>
                 <p className="text-sm text-slate-600">Restaurante: {restaurant?.name || "Sin nombre"}</p>
-                <p className="text-sm text-slate-600">Postulación: {app.status}</p>
+                <p className="text-sm text-slate-600">Postulación: {item.appStatus}</p>
                 <p className="text-sm text-slate-600">
                   {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
                 </p>
@@ -109,7 +151,7 @@ export default async function MyShiftsPage() {
                   </div>
                 )}
 
-                {app.status === "applied" && (
+                {item.appStatus === "applied" && (
                   <form action={withdrawApplication} className="mt-3">
                     <input type="hidden" name="shift_id" value={shift.id} />
                     <button type="submit" className="bg-rose-700">
@@ -118,7 +160,7 @@ export default async function MyShiftsPage() {
                   </form>
                 )}
 
-                {shift.status === "completed" && app.status === "hired" && !ratedShiftIds.has(shift.id) && (
+                {shift.status === "completed" && item.appStatus === "hired" && !ratedShiftIds.has(shift.id) && (
                   <form action={rateRestaurant} className="mt-3 space-y-2">
                     <input type="hidden" name="shift_id" value={shift.id} />
                     <input type="hidden" name="restaurant_id" value={shift.restaurant_id} />
@@ -128,13 +170,13 @@ export default async function MyShiftsPage() {
                   </form>
                 )}
 
-                {shift.status === "completed" && app.status === "hired" && ratedShiftIds.has(shift.id) && (
+                {shift.status === "completed" && item.appStatus === "hired" && ratedShiftIds.has(shift.id) && (
                   <p className="mt-3 text-sm font-medium text-[#154C52]">Ya calificaste este turno.</p>
                 )}
               </li>
             );
           })}
-          {!apps?.length && <li className="text-sm text-slate-500">Todavía no te postulaste a turnos.</li>}
+          {!items.length && <li className="text-sm text-slate-500">Todavía no te postulaste a turnos.</li>}
         </ul>
       </Caja>
     </div>
