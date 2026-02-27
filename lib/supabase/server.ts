@@ -12,9 +12,15 @@ export function createClient() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-        });
+        // En Server Components Next.js no permite mutar cookies.
+        // Supabase puede intentar refrescar sesión; en ese contexto ignoramos el set.
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // No-op intencional.
+        }
       }
     }
   });
