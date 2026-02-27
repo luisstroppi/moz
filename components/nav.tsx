@@ -26,6 +26,7 @@ export function NavPortal({
           <Link
             key={link.href}
             href={link.href}
+            prefetch={false}
             className="rounded-xl border border-[#FDF9E8]/40 bg-[#FDF9E8]/10 px-3 py-1 text-[#FDF9E8] no-underline hover:bg-[#FDF9E8]/20"
           >
             {link.label}

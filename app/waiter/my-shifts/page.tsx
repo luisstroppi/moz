@@ -4,6 +4,9 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { rateRestaurant, withdrawApplication } from "@/app/waiter/actions";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type ApplicationLite = {
   id: string;
   status: string;
@@ -40,7 +43,7 @@ export default async function MyShiftsPage() {
   const profile = await requireRole("waiter");
   const supabase = createClient();
 
-  const [{ data: appsData }, { data: myRatings }, { data: ratingsToMe }, { data: hiredShiftsData }] = await Promise.all([
+  const [{ data: appsData, error: appsError }, { data: myRatings }, { data: ratingsToMe }, { data: hiredShiftsData, error: hiredError }] = await Promise.all([
     supabase.from("applications").select("id, status, shift_id").eq("waiter_id", profile.id).order("created_at", { ascending: false }),
     supabase.from("ratings").select("shift_id").eq("rater_id", profile.id).eq("rater_role", "waiter"),
     supabase
@@ -53,7 +56,6 @@ export default async function MyShiftsPage() {
       .from("shifts")
       .select("id, title, status, start_at, end_at, restaurant_id")
       .eq("hired_waiter_id", profile.id)
-      .in("status", ["contracted", "completed"])
       .order("start_at", { ascending: false })
   ]);
 
@@ -61,14 +63,21 @@ export default async function MyShiftsPage() {
   const hiredShifts = (hiredShiftsData ?? []) as ShiftRow[];
 
   const appShiftIds = Array.from(new Set(apps.map((a) => a.shift_id)));
-  const { data: appShiftsData } = appShiftIds.length
+  const { data: appShiftsData, error: appShiftsError } = appShiftIds.length
     ? await supabase.from("shifts").select("id, title, status, start_at, end_at, restaurant_id").in("id", appShiftIds)
     : { data: [] as ShiftRow[] };
   const appShifts = (appShiftsData ?? []) as ShiftRow[];
 
+  const ratingShiftIds = Array.from(new Set((ratingsToMe ?? []).map((r) => r.shift_id)));
+  const { data: ratingShiftsData, error: ratingShiftsError } = ratingShiftIds.length
+    ? await supabase.from("shifts").select("id, title, status, start_at, end_at, restaurant_id").in("id", ratingShiftIds)
+    : { data: [] as ShiftRow[] };
+  const ratingShifts = (ratingShiftsData ?? []) as ShiftRow[];
+
   const allShiftsById = new Map<string, ShiftRow>();
   for (const s of appShifts) allShiftsById.set(s.id, s);
   for (const s of hiredShifts) allShiftsById.set(s.id, s);
+  for (const s of ratingShifts) allShiftsById.set(s.id, s);
 
   const restaurantIds = Array.from(new Set(Array.from(allShiftsById.values()).map((s) => s.restaurant_id)));
   const { data: restaurantsData } = restaurantIds.length
@@ -117,6 +126,13 @@ export default async function MyShiftsPage() {
             <Stars value={averageToMe} />
           </div>
         </div>
+
+        {(appsError || hiredError || appShiftsError || ratingShiftsError) && (
+          <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
+            Hubo un problema cargando algunos turnos. Error:{" "}
+            {[appsError?.message, hiredError?.message, appShiftsError?.message, ratingShiftsError?.message].filter(Boolean).join(" | ")}
+          </p>
+        )}
 
         <ul className="mt-3 space-y-3">
           {items.map((item) => {

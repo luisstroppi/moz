@@ -4,6 +4,9 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { withdrawApplication } from "@/app/waiter/actions";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type ShiftOpen = {
   id: string;
   title: string;
