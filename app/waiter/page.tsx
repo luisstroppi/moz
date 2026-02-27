@@ -4,6 +4,8 @@ import { BannerPerfil, Caja, ChipEstado, Subtitulo } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
+type RestaurantLite = { name: string | null };
+
 function perfilCompleto(waiter: { full_name: string | null; phone: string | null; city: string | null }) {
   return Boolean(waiter?.full_name && waiter?.phone && waiter?.city);
 }
@@ -37,7 +39,8 @@ export default async function WaiterDashboard({
   const shiftsFiltrados =
     restaurantFilter && shifts
       ? shifts.filter((shift) => {
-          const rest = shift.restaurants as { name: string | null } | null;
+          const restRaw = shift.restaurants as RestaurantLite | RestaurantLite[] | null;
+          const rest = Array.isArray(restRaw) ? restRaw[0] ?? null : restRaw;
           return (rest?.name ?? "").toLowerCase().includes(restaurantFilter.toLowerCase());
         })
       : shifts;
@@ -82,7 +85,8 @@ export default async function WaiterDashboard({
 
         <ul className="mt-4 space-y-3">
           {shiftsFiltrados?.map((shift) => {
-            const rest = shift.restaurants as { name: string | null } | null;
+            const restRaw = shift.restaurants as RestaurantLite | RestaurantLite[] | null;
+            const rest = Array.isArray(restRaw) ? restRaw[0] ?? null : restRaw;
             return (
               <li key={shift.id} className="rounded-lg border border-slate-200 p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">

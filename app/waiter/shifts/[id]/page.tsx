@@ -4,6 +4,12 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { applyToShift, withdrawApplication } from "@/app/waiter/actions";
 
+type RestaurantShift = {
+  name: string | null;
+  description: string | null;
+  address: string | null;
+};
+
 export default async function ShiftDetailWaiterPage({
   params
 }: {
@@ -31,7 +37,8 @@ export default async function ShiftDetailWaiterPage({
     return <p>Turno no encontrado.</p>;
   }
 
-  const restaurant = shift.restaurants as { name: string | null; description: string | null; address: string | null } | null;
+  const restaurantRaw = shift.restaurants as RestaurantShift | RestaurantShift[] | null;
+  const restaurant = Array.isArray(restaurantRaw) ? restaurantRaw[0] ?? null : restaurantRaw;
   const instructionsForRestaurant = instructions?.filter((item) => item.restaurant_id === shift.restaurant_id) ?? [];
 
   return (
