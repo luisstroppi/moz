@@ -4,6 +4,12 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { completeShift, hireWaiter, rateWaiter } from "@/app/restaurant/actions";
 
+type WaiterBasico = {
+  full_name: string | null;
+  city: string | null;
+  experience: string | null;
+};
+
 export default async function ShiftDetailRestaurantPage({
   params
 }: {
@@ -70,7 +76,8 @@ export default async function ShiftDetailRestaurantPage({
         <Subtitulo>Postulantes</Subtitulo>
         <ul className="mt-3 space-y-3">
           {apps?.map((app) => {
-            const waiter = app.waiters as { full_name: string | null; city: string | null; experience: string | null } | null;
+            const waitersRaw = app.waiters as WaiterBasico | WaiterBasico[] | null;
+            const waiter = Array.isArray(waitersRaw) ? waitersRaw[0] ?? null : waitersRaw;
             return (
               <li key={app.id} className="rounded-lg border border-slate-200 p-3">
                 <p className="font-medium">{waiter?.full_name || "Mozo"}</p>
