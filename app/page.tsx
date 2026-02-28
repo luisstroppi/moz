@@ -8,92 +8,62 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen">
-      <section className="relative overflow-hidden bg-[#154C52] px-6 pb-14 pt-8 text-[#FDF9E8] sm:px-10 md:px-14 md:pt-10">
-        <div className="pointer-events-none absolute -left-32 -top-20 h-80 w-80 rounded-full bg-[#F0CD1B]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-[#5E1F1F]/20 blur-3xl" />
-
-        <div className="relative z-10 mx-auto w-full max-w-6xl">
-          <div className="mb-10 flex items-center justify-between">
-            <p className="rounded-full border border-[#FDF9E8]/35 px-4 py-1 text-xs uppercase tracking-[0.22em] text-[#FDF9E8]/90">
-              Moz by Giunti
-            </p>
-            <Link
-              href="/auth/login"
-              className="rounded-xl border border-[#5E1F1F] bg-[#5E1F1F] px-5 py-2 text-sm font-semibold text-[#FDF9E8] no-underline hover:opacity-90"
-            >
-              {user ? "Ir al portal" : "Iniciar sesión"}
-            </Link>
-          </div>
-
-          <div className="grid items-start gap-8 lg:grid-cols-[1.1fr,0.9fr]">
+    <div className="relative left-1/2 right-1/2 -mx-[50vw] min-h-screen w-screen overflow-x-hidden bg-white text-slate-900">
+      <header className="border-b border-[#f5c3d9] bg-white/90 px-6 py-4 backdrop-blur sm:px-10">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
+          <div className="inline-flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff006e] text-base font-extrabold text-white">PY</span>
             <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-[#F0CD1B]">Cobertura por turnos</p>
-              <h1 className="mt-4 max-w-2xl text-5xl font-black leading-[0.96] text-[#FDF9E8] sm:text-6xl md:text-7xl">
-                Contratá mozos por turno
-                <span className="text-[#F0CD1B]"> en minutos.</span>
-              </h1>
-
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#FDF9E8]/88">
-                Moz by Giunti conecta restaurantes que necesitan cubrir turnos con mozos disponibles. Publicá,
-                postulate, contratá y calificá desde una sola plataforma.
-              </p>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/auth/signup?role=restaurant"
-                  className="rounded-xl bg-[#5E1F1F] px-6 py-3 text-center text-sm font-bold text-[#FDF9E8] no-underline"
-                >
-                  Soy restaurante
-                </Link>
-                <Link
-                  href="/auth/signup?role=waiter"
-                  className="rounded-xl border border-[#FDF9E8]/60 px-6 py-3 text-center text-sm font-bold text-[#FDF9E8] no-underline"
-                >
-                  Soy mozo
-                </Link>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-[#FDF9E8]/30 bg-[#FDF9E8] p-5 text-slate-900 shadow-lg sm:p-6">
-              <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#154C52]">Cómo funciona</p>
-              <div className="mt-4 space-y-3">
-                <article className="rounded-2xl border border-[#154C52]/20 bg-[#FDF9E8] p-4">
-                  <p className="text-sm font-bold">1. El restaurante publica un turno</p>
-                  <p className="mt-1 text-sm text-slate-700">Define fecha, horario, puesto y requisitos.</p>
-                </article>
-                <article className="rounded-2xl border border-[#154C52]/20 bg-[#FDF9E8] p-4">
-                  <p className="text-sm font-bold">2. Los mozos se postulan</p>
-                  <p className="mt-1 text-sm text-slate-700">Se postulan desde el panel en segundos.</p>
-                </article>
-                <article className="rounded-2xl border border-[#154C52]/20 bg-[#FDF9E8] p-4">
-                  <p className="text-sm font-bold">3. Se contrata y se califica</p>
-                  <p className="mt-1 text-sm text-slate-700">Ambas partes dejan reseña tras completar.</p>
-                </article>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ff006e]">PedidosYa</p>
+              <p className="text-sm font-semibold text-slate-800">Operaciones</p>
             </div>
           </div>
+          <Link
+            href={user ? "/auth/login" : "/auth/login"}
+            className="rounded-xl bg-[#ff006e] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#e60063]"
+          >
+            {user ? "Entrar al portal" : "Iniciar sesión"}
+          </Link>
         </div>
-      </section>
+      </header>
 
-      <section className="bg-[#FDF9E8] px-6 py-12 text-slate-900 sm:px-10 md:px-14">
-        <div className="mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-2">
-          <article className="rounded-2xl border border-[#154C52]/20 bg-white p-6">
-            <h2 className="text-xl font-bold text-[#154C52]">Para restaurantes</h2>
-            <ul className="mt-3 space-y-2 text-sm text-slate-700">
-              <li>Cubrí ausencias y picos de demanda rápido.</li>
-              <li>Definí rol por turno: mozo, runner, bacha, cafetero o mostrador.</li>
-              <li>Armá instructivos por políticas y por puesto.</li>
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#fff2f8] via-white to-[#ffe8f2] px-6 py-14 sm:px-10 md:py-16">
+        <div className="pointer-events-none absolute -left-28 top-12 h-72 w-72 rounded-full bg-[#ff006e]/15 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -top-10 h-72 w-72 rounded-full bg-[#ff8fbc]/25 blur-3xl" />
+        <div className="relative mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.2fr,0.8fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#ff006e]">Landing de servicio</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight text-slate-900 sm:text-5xl">
+              Centro de operaciones para restaurantes en red PedidosYa
+            </h1>
+            <p className="mt-5 max-w-2xl text-base text-slate-700 sm:text-lg">
+              Gestiona pedidos, turnos y cobertura de mozos desde una sola home. Esta es la nueva puerta de entrada
+              operativa con branding PedidosYa.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/auth/signup?role=restaurant"
+                className="rounded-xl bg-[#ff006e] px-6 py-3 text-center text-sm font-semibold text-white no-underline"
+              >
+                Crear restaurante
+              </Link>
+              <Link
+                href="/auth/signup?role=waiter"
+                className="rounded-xl border border-[#ff006e]/35 bg-white px-6 py-3 text-center text-sm font-semibold text-[#c40056] no-underline"
+              >
+                Crear perfil de mozo
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-[#ffd0e3] bg-white p-6 shadow-[0_20px_45px_-30px_rgba(255,0,110,0.45)]">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#ff006e]">Módulos operativos</p>
+            <ul className="mt-4 space-y-3">
+              <li className="rounded-2xl border border-[#ffe0ed] bg-[#fff5fa] p-4 text-sm font-medium text-slate-800">Procesamiento de pedidos en tiempo real</li>
+              <li className="rounded-2xl border border-[#ffe0ed] bg-[#fff5fa] p-4 text-sm font-medium text-slate-800">Gestión de turnos y dotación de mozos</li>
+              <li className="rounded-2xl border border-[#ffe0ed] bg-[#fff5fa] p-4 text-sm font-medium text-slate-800">Métricas de operación y desempeño del local</li>
             </ul>
-          </article>
-          <article className="rounded-2xl border border-[#154C52]/20 bg-white p-6">
-            <h2 className="text-xl font-bold text-[#154C52]">Para mozos</h2>
-            <ul className="mt-3 space-y-2 text-sm text-slate-700">
-              <li>Encontrá turnos por fecha, restaurante y puesto.</li>
-              <li>Construí reputación con reseñas reales.</li>
-              <li>Recibí propinas con link y QR personal.</li>
-            </ul>
-          </article>
+          </div>
         </div>
       </section>
     </div>

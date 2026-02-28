@@ -1,233 +1,98 @@
-import { NavPortal } from "@/components/nav";
-import { BannerPerfil, Caja, ChevronCircleLink, ChipEstado, Stars, Subtitulo } from "@/components/ui";
+import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { withdrawApplication } from "@/app/waiter/actions";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-type ShiftOpen = {
-  id: string;
-  title: string;
-  start_at: string;
-  end_at: string;
-  status: string;
-  waiter_role: string | null;
-  restaurant_id: string;
-};
-
-type ApplicationLite = {
-  id: string;
-  status: string;
-  shift_id: string;
-};
-
-type ShiftLite = {
-  id: string;
-  title: string;
-  status: string;
-  start_at: string;
-  end_at: string;
-  restaurant_id: string;
-};
-
-function perfilCompleto(waiter: { full_name: string | null; phone: string | null; city: string | null }) {
-  return Boolean(waiter?.full_name && waiter?.phone && waiter?.city);
-}
-
-export default async function WaiterDashboard({
-  searchParams
-}: {
-  searchParams: { date?: string; restaurant?: string; role?: string };
-}) {
+export default async function WaiterHomePage() {
   const profile = await requireRole("waiter");
   const supabase = createClient();
-
-  const dateFilter = searchParams.date;
-  const restaurantFilter = searchParams.restaurant;
-  const roleFilter = searchParams.role;
-
-  let shiftsQuery = supabase
-    .from("shifts")
-    .select("id, title, start_at, end_at, status, waiter_role, restaurant_id")
-    .eq("status", "open")
-    .order("start_at", { ascending: true });
-
-  if (dateFilter) {
-    shiftsQuery = shiftsQuery.gte("start_at", `${dateFilter}T00:00:00`).lte("start_at", `${dateFilter}T23:59:59`);
-  }
-  if (roleFilter) {
-    shiftsQuery = shiftsQuery.eq("waiter_role", roleFilter);
-  }
-
-  const [{ data: waiter }, { data: shiftsOpen }, { data: myAppsRaw }] = await Promise.all([
-    supabase.from("waiters").select("full_name, phone, city").eq("id", profile.id).single(),
-    shiftsQuery,
-    supabase.from("applications").select("id, status, shift_id").eq("waiter_id", profile.id).order("created_at", { ascending: false })
-  ]);
-
-  const myApps = (myAppsRaw ?? []) as ApplicationLite[];
-  const appByShift = new Map(myApps.map((a) => [a.shift_id, a.status]));
-
-  const shifts = (shiftsOpen ?? []) as ShiftOpen[];
-  const openRestaurantIds = Array.from(new Set(shifts.map((s) => s.restaurant_id)));
-  const { data: openRestaurants } = openRestaurantIds.length
-    ? await supabase.from("restaurants").select("id, name").in("id", openRestaurantIds)
-    : { data: [] as { id: string; name: string | null }[] };
-  const openRestaurantById = new Map((openRestaurants ?? []).map((r) => [r.id, r.name || "Sin nombre"]));
-
-  const shiftsFiltrados =
-    restaurantFilter && shifts.length
-      ? shifts.filter((shift) => (openRestaurantById.get(shift.restaurant_id) ?? "").toLowerCase().includes(restaurantFilter.toLowerCase()))
-      : shifts;
-
-  const { data: restaurantRatings } = openRestaurantIds.length
-    ? await supabase.from("ratings").select("ratee_id, score").eq("ratee_role", "restaurant").in("ratee_id", openRestaurantIds)
-    : { data: [] as { ratee_id: string; score: number }[] };
-
-  const restaurantAvg = new Map<string, number>();
-  for (const rid of openRestaurantIds) {
-    const rows = (restaurantRatings ?? []).filter((r) => r.ratee_id === rid);
-    if (!rows.length) continue;
-    restaurantAvg.set(
-      rid,
-      rows.reduce((acc, curr) => acc + curr.score, 0) / rows.length
-    );
-  }
-
-  const appShiftIds = Array.from(new Set(myApps.map((a) => a.shift_id)));
-  const { data: appShiftsData } = appShiftIds.length
-    ? await supabase.from("shifts").select("id, title, status, start_at, end_at, restaurant_id").in("id", appShiftIds)
-    : { data: [] as ShiftLite[] };
-  const appShifts = (appShiftsData ?? []) as ShiftLite[];
-  const appRestaurantIds = Array.from(new Set(appShifts.map((s) => s.restaurant_id)));
-  const { data: appRestaurants } = appRestaurantIds.length
-    ? await supabase.from("restaurants").select("id, name").in("id", appRestaurantIds)
-    : { data: [] as { id: string; name: string | null }[] };
-  const appRestaurantById = new Map((appRestaurants ?? []).map((r) => [r.id, r.name || "Sin nombre"]));
+  const { data: waiter } = await supabase.from("waiters").select("full_name, city").eq("id", profile.id).single();
 
   return (
-    <div>
-      <NavPortal
-        titulo="Portal Mozo"
-        links={[
-          { href: "/waiter", label: "Dashboard" },
-          { href: "/waiter/profile", label: "Perfil" },
-          { href: "/waiter/my-shifts", label: "Mis turnos" },
-          { href: "/waiter/tips", label: "Propinas" }
-        ]}
-      />
-
-      {!perfilCompleto(waiter ?? { full_name: null, phone: null, city: null }) && (
-        <BannerPerfil texto="Completá tu perfil para tener más chances de contratación." href="/waiter/profile" />
-      )}
-
-      <Caja>
-        <Subtitulo>Mis postulaciones (estado actual)</Subtitulo>
-        <ul className="mt-3 space-y-3">
-          {appShifts.map((shift) => {
-            const appStatus = appByShift.get(shift.id) ?? "hired";
-            return (
-              <li key={shift.id} className="rounded-lg border border-slate-200 p-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="font-medium">{shift.title}</p>
-                  <ChipEstado estado={shift.status} />
-                </div>
-                <p className="text-sm text-slate-600">Restaurante: {appRestaurantById.get(shift.restaurant_id) || "Sin nombre"}</p>
-                <p className="text-sm text-slate-600">Postulación: {appStatus}</p>
-                <p className="text-sm text-slate-600">
-                  {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
-                </p>
-                {appStatus === "applied" && (
-                  <form action={withdrawApplication} className="mt-3">
-                    <input type="hidden" name="shift_id" value={shift.id} />
-                    <button type="submit" className="bg-rose-700">
-                      Cancelar postulación
-                    </button>
-                  </form>
-                )}
-              </li>
-            );
-          })}
-          {!appShifts.length && <li className="text-sm text-slate-500">Todavía no te postulaste a turnos.</li>}
-        </ul>
-      </Caja>
-
-      <Caja>
-        <Subtitulo>Buscar turnos disponibles</Subtitulo>
-        <form className="mt-3 grid gap-3 md:grid-cols-4">
+    <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-x-hidden bg-gradient-to-b from-[#ffd6e7] via-[#ffb4d0] to-[#ff8bb7] px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-md rounded-[2rem] border-4 border-slate-900 bg-white p-5 shadow-[0_30px_70px_-35px_rgba(0,0,0,0.65)]">
+        <header className="mb-5 flex items-center justify-between">
           <div>
-            <label htmlFor="date" className="mb-1 block text-sm font-medium">
-              Fecha
-            </label>
-            <input id="date" name="date" type="date" defaultValue={dateFilter} />
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ff006e]">PedidosYa Rider</p>
+            <h1 className="text-3xl font-black text-slate-900">Start working</h1>
           </div>
-          <div>
-            <label htmlFor="restaurant" className="mb-1 block text-sm font-medium">
-              Restaurante
-            </label>
-            <input id="restaurant" name="restaurant" defaultValue={restaurantFilter} placeholder="Nombre" />
-          </div>
-          <div>
-            <label htmlFor="role" className="mb-1 block text-sm font-medium">
-              Puesto
-            </label>
-            <select id="role" name="role" defaultValue={roleFilter}>
-              <option value="">Todos</option>
-              <option value="mozo">Mozo</option>
-              <option value="runner">Runner</option>
-              <option value="bacha">Bacha</option>
-              <option value="cafetero">Cafetero</option>
-              <option value="mozo_mostrador">Mozo de mostrador</option>
-            </select>
-          </div>
-          <div className="self-end">
-            <button type="submit" className="w-full">
-              Filtrar
-            </button>
-          </div>
-        </form>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#fff0f7] text-[#ff006e]">✕</span>
+        </header>
 
-        <ul className="mt-4 space-y-3">
-          {shiftsFiltrados.map((shift) => {
-            const myStatus = appByShift.get(shift.id);
-            return (
-              <li key={shift.id} className="rounded-lg border border-slate-200 p-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="font-medium">{shift.title}</p>
-                  <ChipEstado estado={shift.status} />
-                </div>
-                <p className="text-sm text-slate-600">Restaurante: {openRestaurantById.get(shift.restaurant_id) || "Sin nombre"}</p>
-                <p className="text-sm text-slate-600">
-                  Calificación restaurante: <Stars value={restaurantAvg.get(shift.restaurant_id) ?? null} />
-                </p>
-                <p className="text-sm text-slate-600">Puesto: {labelRol(shift.waiter_role)}</p>
-                <p className="text-sm text-slate-600">
-                  {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
-                </p>
-                {myStatus && <p className="mt-1 text-sm font-medium text-[#5E1F1F]">Ya postulaste: {myStatus}</p>}
-                <div className="mt-3 flex justify-end">
-                  <ChevronCircleLink href={`/waiter/shifts/${shift.id}`} label={`Ver turno ${shift.title}`} />
-                </div>
-              </li>
-            );
-          })}
-          {!shiftsFiltrados.length && <li className="text-sm text-slate-500">No hay turnos para estos filtros.</li>}
-        </ul>
-      </Caja>
+        <p className="text-sm text-slate-600">{waiter?.full_name ? `${waiter.full_name}${waiter.city ? ` · ${waiter.city}` : ""}` : "Configura tu perfil para empezar"}</p>
+
+        <section className="mt-5 border-t border-slate-200 pt-4">
+          <h2 className="text-xl font-bold text-slate-900">Tipo de sesión</h2>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <OptionCard title="Bike" subtitle="Turnos rápidos" icon="🚲" />
+            <OptionCard title="Car" subtitle="Cobertura amplia" icon="🚗" active />
+            <OptionCard title="Moto" subtitle="Alta demanda" icon="🛵" />
+            <OptionCard title="Runner" subtitle="Eventos" icon="🏃" />
+          </div>
+        </section>
+
+        <section className="mt-6 border-t border-slate-200 pt-4">
+          <h2 className="text-xl font-bold text-slate-900">Opciones</h2>
+          <div className="mt-3 space-y-3">
+            <Link
+              href="/waiter/mozo"
+              className="flex items-center gap-3 rounded-2xl border border-[#ffd1e3] bg-[#fff1f8] p-4 text-[#c40056] no-underline transition hover:bg-[#ffe6f2]"
+            >
+              <HandTrayIcon />
+              <div>
+                <p className="text-base font-bold">Modo Mozo</p>
+                <p className="text-sm font-medium text-slate-600">Abrir vista de mozos actual</p>
+              </div>
+            </Link>
+
+            <Link href="/waiter/my-shifts" className="block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 no-underline">
+              Mis turnos
+            </Link>
+            <Link href="/waiter/tips" className="block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 no-underline">
+              Propinas
+            </Link>
+            <Link href="/waiter/profile" className="block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 no-underline">
+              Perfil
+            </Link>
+          </div>
+        </section>
+
+        <button type="button" className="mt-7 w-full rounded-2xl bg-slate-950 py-3 text-lg font-bold text-white">
+          Start
+        </button>
+      </div>
     </div>
   );
 }
 
-function labelRol(value: string | null) {
-  const map: Record<string, string> = {
-    mozo: "Mozo",
-    runner: "Runner",
-    bacha: "Bacha",
-    cafetero: "Cafetero",
-    mozo_mostrador: "Mozo de mostrador"
-  };
-  if (!value) return "Sin definir";
-  return map[value] ?? value;
+function OptionCard({ title, subtitle, icon, active = false }: { title: string; subtitle: string; icon: string; active?: boolean }) {
+  return (
+    <article
+      className={`rounded-2xl border p-3 text-center ${
+        active ? "border-[#ffd1e3] bg-[#ffeef6] text-[#c40056]" : "border-slate-200 bg-white text-slate-800"
+      }`}
+    >
+      <p className="text-2xl">{icon}</p>
+      <p className="mt-1 text-lg font-bold">{title}</p>
+      <p className="text-xs text-slate-500">{subtitle}</p>
+    </article>
+  );
+}
+
+function HandTrayIcon() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+      <path
+        d="M3.5 13.5h5.2c.3 0 .7.1.9.3l1.6 1.2h4.6c.9 0 1.7.8 1.7 1.7s-.8 1.8-1.7 1.8h-5.9l-2.4-1.8"
+        stroke="#c40056"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M7.3 13.5V8.9a2 2 0 0 1 4 0v2.5" stroke="#c40056" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M10.5 11.4V8.5a2 2 0 0 1 4 0v2.9" stroke="#c40056" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M13.8 11.8V9.6a1.9 1.9 0 1 1 3.8 0v3.9" stroke="#c40056" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M5 20h14" stroke="#ff006e" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M6.5 6.5h11a2.5 2.5 0 0 0-5-1 3 3 0 0 0-6 .5c0 .2 0 .3 0 .5Z" stroke="#ff006e" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }

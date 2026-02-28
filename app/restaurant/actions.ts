@@ -26,6 +26,7 @@ export async function saveRestaurantProfile(formData: FormData) {
   });
 
   revalidatePath("/restaurant");
+  revalidatePath("/restaurant/operations");
   redirect("/restaurant");
 }
 
@@ -47,7 +48,8 @@ export async function createShift(formData: FormData) {
   }
 
   revalidatePath("/restaurant");
-  redirect("/restaurant");
+  revalidatePath("/restaurant/operations");
+  redirect("/restaurant/operations");
 }
 
 export async function createInstruction(formData: FormData) {
@@ -109,6 +111,7 @@ export async function hireWaiter(formData: FormData) {
 
   revalidatePath(`/restaurant/shifts/${shiftId}`);
   revalidatePath("/restaurant");
+  revalidatePath("/restaurant/operations");
 }
 
 export async function completeShift(formData: FormData) {
@@ -120,6 +123,7 @@ export async function completeShift(formData: FormData) {
 
   revalidatePath(`/restaurant/shifts/${shiftId}`);
   revalidatePath("/restaurant");
+  revalidatePath("/restaurant/operations");
 }
 
 export async function deleteShift(formData: FormData) {
@@ -130,7 +134,8 @@ export async function deleteShift(formData: FormData) {
   await supabase.from("shifts").delete().eq("id", shiftId).eq("restaurant_id", profile.id);
 
   revalidatePath("/restaurant");
-  redirect("/restaurant");
+  revalidatePath("/restaurant/operations");
+  redirect("/restaurant/operations");
 }
 
 export async function rateWaiter(formData: FormData) {

@@ -21,6 +21,7 @@ export async function saveWaiterProfile(formData: FormData) {
   });
 
   revalidatePath("/waiter");
+  revalidatePath("/waiter/mozo");
   redirect("/waiter");
 }
 
@@ -40,6 +41,7 @@ export async function applyToShift(formData: FormData) {
   );
 
   revalidatePath("/waiter");
+  revalidatePath("/waiter/mozo");
   revalidatePath(`/waiter/shifts/${shiftId}`);
 }
 
@@ -57,6 +59,7 @@ export async function withdrawApplication(formData: FormData) {
 
   revalidatePath("/waiter/my-shifts");
   revalidatePath("/waiter");
+  revalidatePath("/waiter/mozo");
   revalidatePath(`/waiter/shifts/${shiftId}`);
 }
 
@@ -79,4 +82,5 @@ export async function rateRestaurant(formData: FormData) {
 
   revalidatePath("/waiter/my-shifts");
   revalidatePath("/waiter");
+  revalidatePath("/waiter/mozo");
 }
