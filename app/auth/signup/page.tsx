@@ -9,10 +9,10 @@ export default function SignupPage({
   const role = searchParams.role;
 
   return (
-    <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
+    <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-[#ffd2e6] bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-semibold">Crear cuenta</h1>
-      {!role && <p className="rounded-lg bg-amber-50 p-2 text-sm">Elegí tu perfil para continuar.</p>}
-      {searchParams.error && <p className="rounded-lg bg-rose-50 p-2 text-sm text-rose-700">{searchParams.error}</p>}
+      {!role && <p className="rounded-lg bg-[#fff2f8] p-2 text-sm text-[#a5004a]">Elegí tu perfil para continuar.</p>}
+      {searchParams.error && <p className="rounded-lg bg-[#fff0f7] p-2 text-sm text-[#c40056]">{searchParams.error}</p>}
 
       <form action={signupAction} className="space-y-3">
         {!role ? (

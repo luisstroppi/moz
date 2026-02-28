@@ -89,7 +89,7 @@ export default async function ShiftDetailRestaurantPage({
           )}
           <form action={deleteShift}>
             <input type="hidden" name="shift_id" value={shift.id} />
-            <button type="submit" className="bg-rose-700">
+            <button type="submit" className="bg-secundario">
               Borrar turno
             </button>
           </form>

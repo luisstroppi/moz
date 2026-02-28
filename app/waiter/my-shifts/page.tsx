@@ -128,7 +128,7 @@ export default async function MyShiftsPage() {
         </div>
 
         {(appsError || hiredError || appShiftsError || ratingShiftsError) && (
-          <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
+          <p className="mt-2 rounded-lg bg-[#fff2f8] p-2 text-sm text-[#a5004a]">
             Hubo un problema cargando algunos turnos. Error:{" "}
             {[appsError?.message, hiredError?.message, appShiftsError?.message, ratingShiftsError?.message].filter(Boolean).join(" | ")}
           </p>
@@ -152,7 +152,7 @@ export default async function MyShiftsPage() {
                 </p>
 
                 {review && (
-                  <div className="mt-3 rounded-lg border border-[#154C52]/20 bg-white p-3">
+                  <div className="mt-3 rounded-lg border border-[#ffd2e6] bg-white p-3">
                     <p className="text-sm font-semibold">Reseña del restaurante</p>
                     <p className="text-sm text-slate-700">
                       Puntaje: <Stars value={review.score} />
@@ -164,7 +164,7 @@ export default async function MyShiftsPage() {
                 {item.appStatus === "applied" && (
                   <form action={withdrawApplication} className="mt-3">
                     <input type="hidden" name="shift_id" value={shift.id} />
-                    <button type="submit" className="bg-rose-700">
+                    <button type="submit" className="bg-secundario">
                       Cancelar postulación
                     </button>
                   </form>
@@ -180,9 +180,7 @@ export default async function MyShiftsPage() {
                   </form>
                 )}
 
-                {shift.status === "completed" && item.appStatus === "hired" && ratedShiftIds.has(shift.id) && (
-                  <p className="mt-3 text-sm font-medium text-[#154C52]">Ya calificaste este turno.</p>
-                )}
+                {shift.status === "completed" && item.appStatus === "hired" && ratedShiftIds.has(shift.id) && <p className="mt-3 text-sm font-medium text-[#c40056]">Ya calificaste este turno.</p>}
               </li>
             );
           })}

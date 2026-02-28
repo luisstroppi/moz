@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export function Caja({ children }: { children: React.ReactNode }) {
-  return <section className="rounded-2xl border border-[#154C52]/20 bg-[#FDF9E8] p-5 shadow-sm">{children}</section>;
+  return <section className="rounded-2xl border border-[#ffd4e7] bg-white p-5 shadow-sm">{children}</section>;
 }
 
 export function Titulo({ children }: { children: React.ReactNode }) {
@@ -20,9 +20,9 @@ export function BannerPerfil({
   href: string;
 }) {
   return (
-    <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
+    <div className="mb-4 rounded-xl border border-[#ffc7df] bg-[#fff3f9] p-3 text-sm">
       <p className="mb-2">{texto}</p>
-      <Link href={href} className="font-medium text-amber-800">
+      <Link href={href} className="font-medium text-[#c40056]">
         Completar ahora
       </Link>
     </div>
@@ -31,10 +31,10 @@ export function BannerPerfil({
 
 export function ChipEstado({ estado }: { estado: string }) {
   const colores: Record<string, string> = {
-    open: "bg-emerald-100 text-emerald-800",
-    contracted: "bg-[#F0CD1B]/30 text-[#5E1F1F]",
-    completed: "bg-slate-200 text-slate-800",
-    cancelled: "bg-rose-100 text-rose-800"
+    open: "bg-[#ffe8f3] text-[#c40056]",
+    contracted: "bg-[#ffd4e7] text-[#a5004a]",
+    completed: "bg-[#f5f5f5] text-slate-700",
+    cancelled: "bg-[#ffdce9] text-[#a30048]"
   };
 
   return (
@@ -61,8 +61,8 @@ export function Stars({ value }: { value: number | null }) {
   const rounded = Math.round(value * 10) / 10;
   const full = Math.round(value);
   return (
-    <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#5E1F1F]" aria-label={`Promedio ${rounded} de 5`}>
-      <span className="text-base text-[#F0CD1B]">{"★".repeat(Math.max(0, Math.min(5, full)))}</span>
+    <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#c40056]" aria-label={`Promedio ${rounded} de 5`}>
+      <span className="text-base text-[#ff006e]">{"★".repeat(Math.max(0, Math.min(5, full)))}</span>
       <span className="text-base text-slate-300">{"★".repeat(Math.max(0, 5 - Math.max(0, Math.min(5, full))))}</span>
       <span className="ml-1 text-xs text-slate-600">{rounded.toFixed(1)}</span>
     </span>

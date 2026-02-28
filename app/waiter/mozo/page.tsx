@@ -143,7 +143,7 @@ export default async function WaiterMozoPage({
                 {appStatus === "applied" && (
                   <form action={withdrawApplication} className="mt-3">
                     <input type="hidden" name="shift_id" value={shift.id} />
-                    <button type="submit" className="bg-rose-700">
+                    <button type="submit" className="bg-secundario">
                       Cancelar postulación
                     </button>
                   </form>
@@ -207,7 +207,7 @@ export default async function WaiterMozoPage({
                 <p className="text-sm text-slate-600">
                   {new Date(shift.start_at).toLocaleString("es-AR")} - {new Date(shift.end_at).toLocaleString("es-AR")}
                 </p>
-                {myStatus && <p className="mt-1 text-sm font-medium text-[#5E1F1F]">Ya postulaste: {myStatus}</p>}
+                {myStatus && <p className="mt-1 text-sm font-medium text-[#c40056]">Ya postulaste: {myStatus}</p>}
                 <div className="mt-3 flex justify-end">
                   <ChevronCircleLink href={`/waiter/shifts/${shift.id}`} label={`Ver turno ${shift.title}`} />
                 </div>

@@ -39,8 +39,8 @@ export function TipForm({ waiterId }: { waiterId: string }) {
 
       <button type="submit">Dejar propina</button>
 
-      {mensaje && <p className="rounded-lg bg-emerald-50 p-2 text-sm text-emerald-800">{mensaje}</p>}
-      {error && <p className="rounded-lg bg-rose-50 p-2 text-sm text-rose-700">{error}</p>}
+      {mensaje && <p className="rounded-lg bg-[#fff2f8] p-2 text-sm text-[#a5004a]">{mensaje}</p>}
+      {error && <p className="rounded-lg bg-[#fff0f7] p-2 text-sm text-[#c40056]">{error}</p>}
     </form>
   );
 }

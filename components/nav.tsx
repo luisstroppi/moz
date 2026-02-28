@@ -9,14 +9,14 @@ export function NavPortal({
   links: { href: string; label: string }[];
 }) {
   return (
-    <header className="mb-6 rounded-2xl border border-[#154C52]/25 bg-[#154C52] p-4 shadow-sm">
+    <header className="mb-6 rounded-2xl border border-[#ffbddb] bg-gradient-to-r from-[#ff006e] to-[#c40056] p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.15em] text-[#F0CD1B]">Moz by Giunti</p>
-          <h1 className="text-xl font-semibold text-[#FDF9E8]">{titulo}</h1>
+          <p className="text-xs uppercase tracking-[0.15em] text-[#ffd4e7]">PedidosYa Operations</p>
+          <h1 className="text-xl font-semibold text-white">{titulo}</h1>
         </div>
         <form action={logoutAction}>
-          <button type="submit" className="bg-[#5E1F1F] text-[#FDF9E8]">
+          <button type="submit" className="bg-white text-[#c40056] hover:bg-[#fff0f7]">
             Cerrar sesión
           </button>
         </form>
@@ -27,7 +27,7 @@ export function NavPortal({
             key={link.href}
             href={link.href}
             prefetch={false}
-            className="rounded-xl border border-[#FDF9E8]/40 bg-[#FDF9E8]/10 px-3 py-1 text-[#FDF9E8] no-underline hover:bg-[#FDF9E8]/20"
+            className="rounded-xl border border-white/45 bg-white/15 px-3 py-1 text-white no-underline hover:bg-white/25"
           >
             {link.label}
           </Link>

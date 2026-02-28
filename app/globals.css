@@ -9,21 +9,21 @@
 body {
   @apply bg-fondo text-slate-900 antialiased;
   font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
-  background-image: radial-gradient(circle at 10% 10%, #fdf9e8 0%, #f8f2e7 45%, #f2e9d7 100%);
+  background-image: radial-gradient(circle at 8% 8%, #ffe6f2 0%, #fff4f9 42%, #ffffff 100%);
 }
 
 input,
 textarea,
 select {
-  @apply w-full rounded-xl border border-[#154C52]/25 bg-white px-3 py-2 text-sm shadow-sm focus:border-[#154C52] focus:outline-none;
+  @apply w-full rounded-xl border border-[#ff006e]/25 bg-white px-3 py-2 text-sm shadow-sm focus:border-[#ff006e] focus:outline-none;
 }
 
 button {
-  @apply rounded-xl bg-primario px-4 py-2 text-sm font-semibold text-[#FDF9E8] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply rounded-xl bg-primario px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#e00061] disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 a {
-  @apply text-slate-900 underline-offset-2 hover:underline;
+  @apply text-[#c40056] underline-offset-2 hover:underline;
 }
 
 .star-rating {
@@ -46,5 +46,5 @@ a {
 .star-rating label:hover,
 .star-rating label:hover ~ label,
 .star-rating input:checked ~ label {
-  color: #f0cd1b;
+  color: #ff006e;
 }

@@ -24,7 +24,7 @@ export default async function NewShiftPage({
 
       <Caja>
         <Subtitulo>Nuevo turno</Subtitulo>
-        {searchParams.error && <p className="mt-3 rounded-lg bg-rose-50 p-2 text-sm text-rose-700">{searchParams.error}</p>}
+        {searchParams.error && <p className="mt-3 rounded-lg bg-[#fff0f7] p-2 text-sm text-[#c40056]">{searchParams.error}</p>}
         <form action={createShift} className="mt-4 space-y-3">
           <div>
             <label htmlFor="title" className="mb-1 block text-sm font-medium">
